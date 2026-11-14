@@ -99,7 +99,8 @@ a{color:var(--acc)}
 /* ---- saatlik şerit & günlük liste (her ekranda) ---- */
 .hstrip{display:flex;gap:4px;overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:6px;-webkit-overflow-scrolling:touch}
 .hs{flex:0 0 58px;text-align:center;padding:8px 2px;border-radius:12px;scroll-snap-align:start}
-.hs.now{background:#eff6ff}
+.hs.cur{background:#eff6ff}
+.hstrip,.chips,.legend,.seg,.days,.tabs{scrollbar-width:none}.hstrip::-webkit-scrollbar,.chips::-webkit-scrollbar,.legend::-webkit-scrollbar,.seg::-webkit-scrollbar,.days::-webkit-scrollbar,.tabs::-webkit-scrollbar{display:none}
 .hs .h{font-size:12px;color:var(--mute);font-weight:600}.hs .i{font-size:24px;margin:4px 0}.hs .t{font-weight:700}.hs .p{font-size:11px;color:#0369a1;min-height:14px}
 .dlist{display:none}
 .dl{display:grid;grid-template-columns:62px 30px 40px 1fr 40px;align-items:center;gap:8px;padding:11px 2px;border-bottom:1px solid var(--line);cursor:pointer}
@@ -577,7 +578,7 @@ function renderHourStrip(){
   const start=Math.max(F.hours.findIndex(h=>h.t>=F.now.slice(0,13)),0);
   const hs=F.hours.slice(start,start+25);
   $('#hStrip').innerHTML=hs.map((h,k)=>{const hr=+h.t.slice(11,13);const[ic]=iconOf({cloud:h.cloud,prec:h.prec,temp:h.temp,thunder:h.thunder,fog:h.fog,night:hr<7||hr>=18});
-    return`<div class="hs${k===0?' now':''}"><div class="h">${k===0?'Şimdi':(hr===0?dname(h.d,F.today):String(hr).padStart(2,'0'))}</div><div class="i">${ic}</div><div class="t">${fmt(h.temp)}°</div><div class="p">${(h.pop||0)>=0.2?'%'+fmt(h.pop*100):''}</div></div>`}).join('');
+    return`<div class="hs${k===0?' cur':''}"><div class="h">${k===0?'Şimdi':(hr===0?dname(h.d,F.today):String(hr).padStart(2,'0'))}</div><div class="i">${ic}</div><div class="t">${fmt(h.temp)}°</div><div class="p">${(h.pop||0)>=0.2?'%'+fmt(h.pop*100):''}</div></div>`}).join('');
 }
 function renderDayList(id){
   const ds=F.days;if(!ds.length){$(id).innerHTML='';return}
