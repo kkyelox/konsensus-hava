@@ -1,0 +1,26 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'com.kkyelox.hava'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'com.kkyelox.hava'
+        minSdk 26
+        targetSdk 34
+        versionCode (System.getenv('GITHUB_RUN_NUMBER') ? System.getenv('GITHUB_RUN_NUMBER').toInteger() : 1)
+        versionName "1." + (System.getenv('GITHUB_RUN_NUMBER') ?: "0")
+    }
+    signingConfigs {
+        widget {
+            storeFile rootProject.file('widget.keystore')
+            storePassword 'hava1234'
+            keyAlias 'hava'
+            keyPassword 'hava1234'
+        }
+    }
+    buildTypes {
+        release { minifyEnabled false; signingConfig signingConfigs.widget }
+        debug { signingConfig signingConfigs.widget }
+    }
+    lint { abortOnError false; checkReleaseBuilds false }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}

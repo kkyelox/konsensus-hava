@@ -18,3 +18,9 @@ Commit sonrası Cloudflare siteyi otomatik yeniden yayınlar. Şehir eklemek iç
 - **GitHub Pages** (isteğe bağlı): Settings → Pages → GitHub Actions veya `public` klasörü.
 
 Veri: Open-Meteo (CC BY 4.0), ECMWF, NOAA, DWD, CMC, JMA, Météo-France, UKMO, CMA, Copernicus ERA5, NASA GIBS, RainViewer, OpenStreetMap, Esri.
+
+## Android widget
+`android/` klasöründeki küçük uygulama ana ekrana bir widget ekler: şimdiki sıcaklık + 3 günlük yağmur olasılığı
+(9 model + ECMWF/NOAA ansambl, sitedeki formülle). GitHub Actions her değişiklikte APK derler:
+https://github.com/kkyelox/konsensus-hava/releases/download/widget/KonsensusHava.apk
+Widget'a dokununca site o konumla **Yağmur** sekmesinde açılır (`?lat=..&lon=..&name=..#yagmur`).

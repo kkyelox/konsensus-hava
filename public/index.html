@@ -1006,7 +1006,15 @@ $('#gps').onclick=()=>{
 };
 function alertBox(m){$('#results').innerHTML='<div class="mute">'+esc(m)+'</div>';$('#results').style.display='block'}
 window.showTab=showTab;
-go(load('wx_loc',null)||{lat:41.0082,lon:28.9784,name:'İstanbul',sub:'Türkiye'});
+const TABS=['ozet','yagmur','saatlik','gunluk','dogruluk','harita','kaynak'];
+function fromHash(){const h=location.hash.slice(1);if(TABS.includes(h))showTab(h)}
+window.addEventListener('hashchange',fromHash);
+(function start(){
+  let loc=load('wx_loc',null)||{lat:41.0082,lon:28.9784,name:'İstanbul',sub:'Türkiye'};
+  try{const q=new URLSearchParams(location.search);const la=parseFloat(q.get('lat')),lo=parseFloat(q.get('lon'));
+    if(isFinite(la)&&isFinite(lo)&&Math.abs(la)<=90&&Math.abs(lo)<=180)loc={lat:la,lon:lo,name:(q.get('name')||'Konum').slice(0,60),sub:'Widget konumu'};}catch(e){}
+  fromHash();go(loc);
+})();
 </script>
 </body>
 </html>
