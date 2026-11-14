@@ -2,7 +2,14 @@
 <html lang="tr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1e3a8a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Konsensüs Hava">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>Konsensüs Hava — Çok Modelli 16 Günlük Tahmin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -88,7 +95,56 @@ th{color:var(--mute);font-weight:600;font-size:12px;position:sticky;top:0;backgr
 a{color:var(--acc)}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .score{font-size:44px;font-weight:800}
-@media(max-width:600px){.now .t{font-size:44px}.now .ic{font-size:52px}#map{height:380px}.chart{height:230px}}
+
+/* ---- saatlik şerit & günlük liste (her ekranda) ---- */
+.hstrip{display:flex;gap:4px;overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:6px;-webkit-overflow-scrolling:touch}
+.hs{flex:0 0 58px;text-align:center;padding:8px 2px;border-radius:12px;scroll-snap-align:start}
+.hs.now{background:#eff6ff}
+.hs .h{font-size:12px;color:var(--mute);font-weight:600}.hs .i{font-size:24px;margin:4px 0}.hs .t{font-weight:700}.hs .p{font-size:11px;color:#0369a1;min-height:14px}
+.dlist{display:none}
+.dl{display:grid;grid-template-columns:62px 30px 40px 1fr 40px;align-items:center;gap:8px;padding:11px 2px;border-bottom:1px solid var(--line);cursor:pointer}
+.dl:last-child{border:0}
+.dl .n{font-weight:700;font-size:14px}.dl .n small{display:block;font-weight:500;color:var(--mute);font-size:11px}
+.dl .i{font-size:24px;text-align:center}.dl .pp{font-size:11px;color:#0369a1;text-align:center}
+.rng{position:relative;height:6px;border-radius:3px;background:#e2e8f0}
+.rng i{position:absolute;top:0;bottom:0;border-radius:3px;background:linear-gradient(90deg,#60a5fa,#f59e0b,#ef4444)}
+.dl .mn{color:var(--mute);text-align:right;font-size:14px}.dl .mx{font-weight:700;font-size:14px}
+.dlx{display:none;grid-column:1/-1;font-size:12.5px;color:var(--mute);background:#f8fafc;border-radius:10px;padding:8px 10px;margin-top:4px}
+.dl.open .dlx{display:block}
+.dlx b{color:var(--ink)}
+.bnav{display:none}
+@media(max-width:700px){
+  body{font-size:14.5px;padding-bottom:calc(64px + env(safe-area-inset-bottom))}
+  header{padding:calc(10px + env(safe-area-inset-top)) 12px 62px}
+  .brand{font-size:17px}.brand small{display:none}
+  .search{margin-top:10px}.search input{padding:11px 12px}
+  .search button{font-size:0;padding:0 13px}.search button::before{content:'📍';font-size:18px}
+  main{padding:0 10px 20px;margin-top:-52px}
+  .card{padding:13px;border-radius:14px;margin-bottom:10px}
+  .now{grid-template-columns:auto 1fr;gap:4px 12px}
+  .now .ic{font-size:50px}.now .t{font-size:46px;letter-spacing:-1.5px}.now .loc{font-size:17px}
+  .chips{flex-wrap:nowrap;overflow-x:auto;margin-right:-13px;padding-right:13px;-webkit-overflow-scrolling:touch}
+  .chip{white-space:nowrap;flex:0 0 auto}
+  .tabs{display:none}
+  .bnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:2500;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:4px 2px calc(4px + env(safe-area-inset-bottom))}
+  .bnav button{flex:1;border:0;background:none;font:inherit;font-size:10.5px;font-weight:600;color:var(--mute);padding:6px 0;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;min-height:48px}
+  .bnav button span{font-size:20px;line-height:1;filter:grayscale(1);opacity:.7}
+  .bnav button.on{color:var(--acc)}.bnav button.on span{filter:none;opacity:1}
+  .dlist{display:block}.dtable-wrap{display:none}
+  .hide-m{display:none}
+  .days{display:none}
+  .grid{grid-template-columns:1fr 1fr;gap:8px}
+  .kpi{padding:10px}.kpi .v{font-size:21px}.kpi .l{font-size:11.5px}
+  .chart{height:220px}.chart.sm{height:170px}
+  .seg{display:flex;width:100%;overflow-x:auto;flex-wrap:nowrap}.seg button{flex:1 0 auto;padding:8px 10px}
+  .legend{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}.legend label{white-space:nowrap;flex:0 0 auto;padding:6px 10px}
+  #map{height:62vh;min-height:320px}
+  table{font-size:12px}th,td{padding:7px 5px}
+  .score{font-size:38px}
+  h2{font-size:16px}
+  #results{top:48px}#results div{padding:13px 14px}
+  .leaflet-control-layers-expanded{max-width:230px;font-size:12px}
+}
 </style>
 </head>
 <body>
@@ -116,7 +172,8 @@ a{color:var(--acc)}
 
   <section class="view on" id="v-ozet">
     <div class="card"><h2>Akıllı özet</h2><p class="sub">Model konsensüsünden kural tabanlı olarak üretilir.</p><div id="summary"></div></div>
-    <div class="card"><h2>16 günlük tahmin</h2><p class="sub">Rozet = en yüksek sıcaklığın ±2 °C içinde çıkma olasılığı (bu konumun geçmiş hata istatistiğinden).</p><div class="days" id="dayStrip"></div></div>
+    <div class="card"><h2>Önümüzdeki 24 saat</h2><div class="hstrip" id="hStrip"></div></div>
+    <div class="card"><h2>16 günlük tahmin</h2><p class="sub">Rozet = en yüksek sıcaklığın ±2 °C içinde çıkma olasılığı (bu konumun geçmiş hata istatistiğinden).</p><div class="days" id="dayStrip"></div><div class="dlist" id="dayList"></div></div>
     <div class="card"><div class="grid" id="ozetKpi"></div></div>
   </section>
 
@@ -136,7 +193,7 @@ a{color:var(--acc)}
 
   <section class="view" id="v-gunluk">
     <div class="card"><h2>16 günlük sıcaklık bandı</h2><p class="sub">Kesikli çizgiler: 2016–2025 ERA5 mevsim normali</p><div class="chart"><canvas id="cD"></canvas></div></div>
-    <div class="card"><h2>Günlük ayrıntı</h2><div class="tscroll"><table id="dTable"></table></div>
+    <div class="card"><h2>Günlük ayrıntı</h2><div class="dlist" id="dayList2"></div><div class="tscroll dtable-wrap"><table id="dTable"></table></div>
       <p class="note">Uyum: modeller arası yayılım (°C). Değişim: dünkü model çalıştırmasına göre en yüksek sıcaklıktaki ortalama değişim. 8. günden sonra tahmin, ölçülen beceriye göre mevsim normaline doğru sönümlenir.</p></div>
   </section>
 
@@ -170,6 +227,14 @@ a{color:var(--acc)}
   </section>
 </div></main>
 
+<nav class="bnav" id="bnav">
+  <button data-v="ozet" class="on"><span>🏠</span>Özet</button>
+  <button data-v="saatlik"><span>⏱️</span>Saatlik</button>
+  <button data-v="gunluk"><span>📅</span>16 Gün</button>
+  <button data-v="dogruluk"><span>🎯</span>Doğruluk</button>
+  <button data-v="harita"><span>🛰️</span>Harita</button>
+  <button data-v="kaynak"><span>📚</span>Kaynak</button>
+</nav>
 <script>
 "use strict";
 /* ============ yardımcılar ============ */
@@ -200,7 +265,7 @@ async function getJSON(url,timeout=30000){
   const host=new URL(url).host;const max=host.startsWith('previous-runs')?2:host.startsWith('ensemble')?2:4;
   for(let a=0;;a++){
     try{return await limited(host,max,()=>getJSON1(url,timeout))}
-    catch(e){if(a<4&&/concurrent|429|Too many/i.test(e.message)){await new Promise(r=>setTimeout(r,800*(a+1)+Math.random()*400));continue}throw e}
+    catch(e){if((a<4&&/concurrent|429|Too many/i.test(e.message))||(a<1&&/Failed to fetch|NetworkError|Load failed/i.test(e.message))){await new Promise(r=>setTimeout(r,800*(a+1)+Math.random()*400));continue}throw e}
   }
 }
 async function getJSON1(url,timeout){
@@ -264,11 +329,11 @@ async function fetchAll(lat,lon){
         const n=h.temperature_2m.filter(ok).length;if(!n)throw new Error('Bu konum için veri yok');
         h.map=mapIdx(h.time);D.fc[m.id]=h;setSrc('m_'+m.id,true,Math.round(n/24)+' günlük ufuk')})
       .catch(e=>setSrc('m_'+m.id,false,e.message)).finally(tick));
-    const pv=[];for(const v of ['temperature_2m','precipitation','wind_speed_10m']){pv.push(v);for(let L=1;L<=7;L++)pv.push(v+'_previous_day'+L)}
-    jobs.push(getJSON(`https://previous-runs-api.open-meteo.com/v1/forecast?${ll}&past_days=40&forecast_days=8&hourly=${pv.join(',')}&models=${m.id}`)
+    const pv=['temperature_2m'];for(let L=1;L<=7;L++)pv.push('temperature_2m_previous_day'+L,'precipitation_previous_day'+L);
+    jobs.push(getJSON(`https://previous-runs-api.open-meteo.com/v1/forecast?${ll}&past_days=31&forecast_days=8&hourly=${pv.join(',')}&models=${m.id}`)
       .then(j=>{const h={time:j.hourly.time};for(const v of pv)h[v]=key(j.hourly,v,m.id)||null;
         if(!h['temperature_2m_previous_day1']||!h['temperature_2m_previous_day1'].some(ok))throw new Error('Arşiv yok');
-        D.prev[m.id]=h;setSrc('p_'+m.id,true,'40 günlük çalıştırma arşivi')})
+        D.prev[m.id]=h;setSrc('p_'+m.id,true,'31 günlük çalıştırma arşivi')})
       .catch(e=>setSrc('p_'+m.id,false,e.message)).finally(tick));
   }
   for(const e of ENS){
@@ -279,11 +344,13 @@ async function fetchAll(lat,lon){
       .catch(er=>setSrc('e_'+e.id,false,er.message)).finally(tick));
   }
   const today=new Date().toISOString().slice(0,10);
-  jobs.push(getJSON(`https://archive-api.open-meteo.com/v1/archive?${ll}&start_date=${addDays(today,-40)}&end_date=${addDays(today,-3)}&hourly=temperature_2m,precipitation,wind_speed_10m`)
+  jobs.push(getJSON(`https://archive-api.open-meteo.com/v1/archive?${ll}&start_date=${addDays(today,-31)}&end_date=${addDays(today,-2)}&hourly=temperature_2m,precipitation,wind_speed_10m`)
     .then(j=>{D.era=j.hourly;D.era.map=mapIdx(j.hourly.time);const n=j.hourly.temperature_2m.filter(ok).length;if(n<24*7)throw new Error('Yetersiz veri');setSrc('era',true,Math.floor(n/24)+' gün')})
     .catch(e=>setSrc('era',false,e.message)).finally(tick));
-  jobs.push(getJSON(`https://archive-api.open-meteo.com/v1/archive?${ll}&start_date=2016-01-01&end_date=2025-12-31&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max`,45000)
-    .then(j=>{D.clim=j.daily;setSrc('clim',true,j.daily.time.length+' gün')})
+  const ck='wx_clim_'+(+lat).toFixed(2)+','+(+lon).toFixed(2);const cc=load(ck,null);
+  if(cc&&cc.saved&&Date.now()-cc.saved<30*864e5&&cc.daily){D.clim=cc.daily;setSrc('clim',true,cc.daily.time.length+' gün (tarayıcı önbelleği)');tick()}
+  else jobs.push(getJSON(`https://archive-api.open-meteo.com/v1/archive?${ll}&start_date=2016-01-01&end_date=2025-12-31&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max`,45000)
+    .then(j=>{D.clim=j.daily;store(ck,{saved:Date.now(),daily:j.daily});setSrc('clim',true,j.daily.time.length+' gün')})
     .catch(e=>setSrc('clim',false,e.message)).finally(tick));
   await Promise.all(jobs);
 }
@@ -497,6 +564,7 @@ function renderSummary(){
 }
 function dayIcon(d){return iconOf({cloud:d.cloud,psum:d.psum,pop:d.pop,temp:(d.tmax+d.tmin)/2,thunder:d.thunder,fog:d.fog})}
 function renderDays(){
+  renderHourStrip();renderDayList('#dayList');renderDayList('#dayList2');
   $('#dayStrip').innerHTML=F.days.map(d=>{const[ic,tx]=dayIcon(d);return`<div class="day" title="${tx}" onclick="showTab('gunluk')"><div class="dn">${dname(d.d,F.today)}</div><div class="dd">${dshort(d.d)}</div><div class="i">${ic}</div><div><span class="mx">${fmt(d.tmax)}°</span> <span class="mn">${fmt(d.tmin)}°</span></div><div class="pp">💧 %${fmt(d.pop*100)}</div><span class="badge ${confCls(d.conf)}">%${fmt(d.conf*100)} güven</span></div>`}).join('');
   const b1=V.blend[1];const sc=Math.round(consistencyScore()??NaN);
   $('#ozetKpi').innerHTML=`
@@ -504,6 +572,22 @@ function renderDays(){
    <div class="kpi"><div class="l">1 günlük ortalama hata (en yüksek sıcaklık)</div><div class="v">${b1&&b1.tmax?fmt(b1.tmax.mae,1)+'°C':'–'}</div></div>
    <div class="kpi"><div class="l">Yağışlı/kuru gün doğru bilme (1 gün)</div><div class="v">${b1&&b1.pAcc!=null?'%'+fmt(b1.pAcc*100):'–'}</div></div>
    <div class="kpi"><div class="l">Konum tutarlılık skoru</div><div class="v">${ok(sc)?sc+'/100':'–'}</div></div>`;
+}
+function renderHourStrip(){
+  const start=Math.max(F.hours.findIndex(h=>h.t>=F.now.slice(0,13)),0);
+  const hs=F.hours.slice(start,start+25);
+  $('#hStrip').innerHTML=hs.map((h,k)=>{const hr=+h.t.slice(11,13);const[ic]=iconOf({cloud:h.cloud,prec:h.prec,temp:h.temp,thunder:h.thunder,fog:h.fog,night:hr<7||hr>=18});
+    return`<div class="hs${k===0?' now':''}"><div class="h">${k===0?'Şimdi':(hr===0?dname(h.d,F.today):String(hr).padStart(2,'0'))}</div><div class="i">${ic}</div><div class="t">${fmt(h.temp)}°</div><div class="p">${(h.pop||0)>=0.2?'%'+fmt(h.pop*100):''}</div></div>`}).join('');
+}
+function renderDayList(id){
+  const ds=F.days;if(!ds.length){$(id).innerHTML='';return}
+  const lo=Math.min(...ds.map(d=>d.tmin)),hi=Math.max(...ds.map(d=>d.tmax)),sp=Math.max(hi-lo,1);
+  $(id).innerHTML=ds.map(d=>{const[ic,tx]=dayIcon(d);const a=(d.tmin-lo)/sp*100,b=(d.tmax-lo)/sp*100;
+    return`<div class="dl" onclick="this.classList.toggle('open')"><div class="n">${dname(d.d,F.today)}<small>${dshort(d.d)}</small></div>
+    <div><div class="i">${ic}</div><div class="pp">${d.pop>=0.2?'%'+fmt(d.pop*100):''}</div></div>
+    <div class="mn">${fmt(d.tmin)}°</div><div class="rng"><i style="left:${a}%;right:${100-b}%"></i></div>
+    <div class="mx">${fmt(d.tmax)}° <span class="badge ${confCls(d.conf)}" style="display:block;margin:3px 0 0;text-align:center;font-size:10px;padding:1px 4px">%${fmt(d.conf*100)}</span></div>
+    <div class="dlx"><b>${tx}</b> · Yağış ${d.psum>=0.1?fmt(d.psum,1)+' mm':'yok'} (olasılık %${fmt(d.pop*100)}) · Rüzgâr ${fmt(d.wind)} km/sa, hamle ${fmt(d.gust)}<br>Güven %${fmt(d.conf*100)} (±${fmt(1.28*d.sig,1)}°C, %80) · Model uyumu ${fmt(d.spread,1)}°${d.change!=null?' · Dünden değişim '+fmt(d.change,1)+'°':''}${d.clim?' · Normal '+fmt(d.clim.tmax)+'°/'+fmt(d.clim.tmin)+'°':''}</div></div>`}).join('');
 }
 function killChart(k){if(charts[k]){charts[k].destroy();delete charts[k]}}
 let hiddenModels=new Set(load('wx_hidden',[]));
@@ -519,7 +603,7 @@ function renderHourly(){
     {label:'Konsensüs',data:hs.map(h=>h.temp),borderColor:'#1e3a8a',borderWidth:3,pointRadius:0,tension:.3}];
   for(const m of MODELS){if(!D.fc[m.id]||hiddenModels.has(m.id))continue;ds.push({label:m.name,data:hs.map(h=>h.per[m.id]??null),borderColor:m.col,borderWidth:1,pointRadius:0,tension:.3,spanGaps:false})}
   const common={responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
-    plugins:{legend:{display:false},tooltip:{filter:i=>!i.dataset.label.includes('%80')}},scales:{x:{ticks:{maxTicksLimit:hRangeH<=48?12:10,autoSkip:true},grid:{display:false}}}};
+    plugins:{legend:{display:false},tooltip:{filter:i=>!i.dataset.label.includes('%80')}},scales:{x:{ticks:{maxTicksLimit:innerWidth<700?6:(hRangeH<=48?12:10),autoSkip:true,maxRotation:0},grid:{display:false}}}};
   charts.t=new Chart($('#cT'),{type:'line',data:{labels:lbl,datasets:ds},options:{...common,scales:{...common.scales,y:{title:{display:true,text:'°C'}}}}});
   killChart('p');
   charts.p=new Chart($('#cP'),{data:{labels:lbl,datasets:[
@@ -532,9 +616,9 @@ function renderHourly(){
     {label:'Hamle',data:hs.map(h=>h.gust),borderColor:'#f59e0b',borderWidth:1.5,borderDash:[4,3],pointRadius:0,tension:.3}]},
     options:{...common,scales:{...common.scales,y:{beginAtZero:true}}}});
   const h48=F.hours.slice(Math.max(start,0),Math.max(start,0)+48);
-  $('#hTable').innerHTML='<tr><th>Saat</th><th></th><th>Sıcaklık</th><th>±</th><th>Yağış</th><th>Olas.</th><th>Rüzgâr</th><th>Hamle</th><th>Nem</th><th>Bulut</th><th>Model</th></tr>'+
+  $('#hTable').innerHTML='<tr><th>Saat</th><th></th><th>Sıcaklık</th><th class="hide-m">±</th><th>Yağış</th><th>Olas.</th><th>Rüzgâr</th><th class="hide-m">Hamle</th><th class="hide-m">Nem</th><th class="hide-m">Bulut</th><th class="hide-m">Model</th></tr>'+
    h48.map(h=>{const hr=+h.t.slice(11,13);const[ic]=iconOf({cloud:h.cloud,prec:h.prec,temp:h.temp,thunder:h.thunder,fog:h.fog,night:hr<6||hr>=19});
-    return`<tr><td>${hr===0||h===h48[0]?'<b>'+dname(h.d,F.today)+'</b> ':''}${h.t.slice(11,16)}</td><td>${ic}</td><td><b>${fmt(h.temp,1)}°</b></td><td class="mute">${fmt(1.28*h.sig,1)}</td><td>${h.prec>=0.05?fmt(h.prec,1)+' mm':'–'}</td><td>%${fmt((h.pop||0)*100)}</td><td>${fmt(h.wind)} ${dirTxt(h.dir)}</td><td>${fmt(h.gust)}</td><td>%${fmt(h.rh)}</td><td>%${fmt(h.cloud)}</td><td class="mute">${h.n}</td></tr>`}).join('');
+    return`<tr><td>${hr===0||h===h48[0]?'<b>'+dname(h.d,F.today)+'</b> ':''}${h.t.slice(11,16)}</td><td>${ic}</td><td><b>${fmt(h.temp,1)}°</b></td><td class="mute hide-m">${fmt(1.28*h.sig,1)}</td><td>${h.prec>=0.05?fmt(h.prec,1)+' mm':'–'}</td><td>%${fmt((h.pop||0)*100)}</td><td>${fmt(h.wind)} ${dirTxt(h.dir)}</td><td class="hide-m">${fmt(h.gust)}</td><td class="hide-m">%${fmt(h.rh)}</td><td class="hide-m">%${fmt(h.cloud)}</td><td class="mute hide-m">${h.n}</td></tr>`}).join('');
 }
 function renderDaily(){
   const ds=F.days;killChart('d');
@@ -553,7 +637,7 @@ function renderDaily(){
     ds.map(d=>{const[ic,tx]=dayIcon(d);return`<tr><td><b>${dname(d.d,F.today)}</b> <span class="mute">${dshort(d.d)}</span></td><td title="${tx}">${ic}</td><td><b>${fmt(d.tmax)}°</b></td><td>${fmt(d.tmin)}°</td><td class="mute">${fmt(1.28*d.sig,1)}°</td><td>${d.psum>=0.1?fmt(d.psum,1)+' mm':'–'}</td><td>%${fmt(d.pop*100)}</td><td>${fmt(d.wind)}/${fmt(d.gust)}</td><td><span class="badge ${confCls(d.conf)}" style="margin:0">%${fmt(d.conf*100)}</span></td><td>${fmt(d.spread,1)}°</td><td>${d.change!=null?fmt(d.change,1)+'°':'–'}</td><td class="mute">${d.clim?fmt(d.clim.tmax)+'/'+fmt(d.clim.tmin):'–'}</td></tr>`}).join('');
 }
 function renderVerification(){
-  if(!V.ok){$('#verSub').textContent='Doğrulama verisi alınamadı (geçmiş çalıştırma arşivi veya ERA5). Tahmin eşit ağırlıklı konsensüsle üretildi.';$('#verKpi').innerHTML='';$('#mTable').innerHTML='';killChart('s');return}
+  if(!V.ok){$('#verSub').textContent='Doğrulama verisi şu an alınamadı (Open-Meteo ücretsiz kota sınırı veya ağ hatası olabilir; birkaç dakika sonra yenile). Bu yüklemede tahmin eşit ağırlıklı konsensüsle ve varsayılan hata büyümesiyle üretildi.';$('#verKpi').innerHTML='';$('#mTable').innerHTML='';killChart('s');return}
   $('#verSub').textContent=`Son ${V.days} günün (ERA5 gecikmesi nedeniyle ~3 gün öncesine kadar) gerçekleşen değerleriyle karşılaştırma. Konsensüs skorları aynı dönemde öğrenilen ağırlıklarla hesaplandığı için hafif iyimser olabilir.`;
   const k=(L)=>V.blend[L]||{};
   $('#verKpi').innerHTML=[1,3,5,7].map(L=>{const b=k(L);return`<div class="kpi"><div class="l">${L} gün önceden — en yüksek sıcaklık</div><div class="v">${b.tmax?'%'+fmt(b.tmax.hit*100):'–'}</div><div class="l">±2°C isabet · ort. hata ${b.tmax?fmt(b.tmax.mae,1)+'°':'–'} · yağış %${b.pAcc!=null?fmt(b.pAcc*100):'–'}</div></div>`}).join('');
@@ -664,7 +748,7 @@ function initMap(){
   osm.addTo(map);
   const y=addDays(new Date().toISOString().slice(0,10),-1);$('#satDate').value=y;$('#satDate').max=new Date().toISOString().slice(0,10);
   buildSat(y);
-  ctrl=L.control.layers({'Harita (OSM)':osm,'Yüksek çözünürlüklü uydu fotoğrafı (Esri)':esri},{},{collapsed:false}).addTo(map);
+  ctrl=L.control.layers({'Harita (OSM)':osm,'Yüksek çözünürlüklü uydu fotoğrafı (Esri)':esri},{},{collapsed:innerWidth<700}).addTo(map);
   addSatToCtrl();
   satLayers['VIIRS NOAA-20 (bulut, gerçek renk)'].addTo(map);
   setSrc('gibs',true,'Tarih '+y);
@@ -697,11 +781,11 @@ async function go(loc){
   if(!Object.keys(D.fc).length)$('#nowCard').innerHTML+='<p style="color:#dc2626">Model verisi alınamadı. İnternet bağlantını kontrol edip tekrar dene.</p>';
   $('#loading').style.display='none';
 }
-function showTab(v){document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));
+function showTab(v){document.querySelectorAll('#tabs button,#bnav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));window.scrollTo({top:0,behavior:'instant'});document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));
   if(v==='harita'){initMap();setTimeout(()=>map.invalidateSize(),60)}
   if(v==='harita'&&SRC.gibs)renderSources();
   Object.values(charts).forEach(c=>c.resize());}
-document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>showTab(b.dataset.v));
+document.querySelectorAll('#tabs button,#bnav button').forEach(b=>b.onclick=()=>showTab(b.dataset.v));
 document.querySelectorAll('#hRange button').forEach(b=>b.onclick=()=>{hRangeH=+b.dataset.h;document.querySelectorAll('#hRange button').forEach(x=>x.classList.toggle('on',x===b));renderHourly()});
 
 let qT=null;

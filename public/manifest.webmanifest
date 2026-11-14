@@ -1,0 +1,2 @@
+{"name":"Konsensüs Hava","short_name":"Hava","description":"9 modelli 16 günlük hava tahmini, doğruluk ve tutarlılık","start_url":"./","scope":"./","display":"standalone","background_color":"#eef3f9","theme_color":"#1e3a8a","lang":"tr",
+ "icons":[{"src":"icon-192.png","sizes":"192x192","type":"image/png"},{"src":"icon-512.png","sizes":"512x512","type":"image/png"},{"src":"icon.svg","sizes":"any","type":"image/svg+xml"}]}
