@@ -192,7 +192,18 @@ function store(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 function load(k,def){try{const v=localStorage.getItem(k);return v?JSON.parse(v):def}catch(e){return def}}
 function status(t){$('#lstat').textContent=t}
 
+// eşzamanlılık sınırlayıcı + "too many concurrent" için yeniden deneme
+const _q={};
+function limited(host,max,fn){const q=_q[host]=_q[host]||{n:0,w:[]};
+  return new Promise((res,rej)=>{const run=()=>{q.n++;fn().then(res,rej).finally(()=>{q.n--;const nx=q.w.shift();if(nx)nx()})};q.n<max?run():q.w.push(run)})}
 async function getJSON(url,timeout=30000){
+  const host=new URL(url).host;const max=host.startsWith('previous-runs')?2:host.startsWith('ensemble')?2:4;
+  for(let a=0;;a++){
+    try{return await limited(host,max,()=>getJSON1(url,timeout))}
+    catch(e){if(a<4&&/concurrent|429|Too many/i.test(e.message)){await new Promise(r=>setTimeout(r,800*(a+1)+Math.random()*400));continue}throw e}
+  }
+}
+async function getJSON1(url,timeout){
   const c=new AbortController();const id=setTimeout(()=>c.abort(),timeout);
   try{const r=await fetch(url,{signal:c.signal});const txt=await r.text();let j;try{j=JSON.parse(txt)}catch(e){throw new Error('HTTP '+r.status)}
     if(!r.ok||j.error)throw new Error(j.reason||('HTTP '+r.status));return j}
