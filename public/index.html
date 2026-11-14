@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Konsensüs Hava — Çok Modelli 16 Günlük Tahmin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root{--bg:#eef3f9;--card:#fff;--ink:#0f172a;--mute:#64748b;--line:#e2e8f0;--acc:#2563eb;--acc2:#0ea5e9;--ok:#16a34a;--mid:#d97706;--bad:#dc2626;--r:16px}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.45}
+header{background:linear-gradient(135deg,#1e3a8a,#2563eb 55%,#0ea5e9);color:#fff;padding:14px 16px 70px}
+.wrap{max-width:1100px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px}
+.brand small{font-weight:500;opacity:.8;font-size:12px}
+.search{position:relative;display:flex;gap:8px;margin-top:12px}
+.search input{flex:1;padding:12px 14px;border-radius:12px;border:0;font:inherit;font-size:16px;outline:none}
+.search button{border:0;border-radius:12px;padding:0 14px;background:rgba(255,255,255,.18);color:#fff;font:inherit;font-weight:600;cursor:pointer;white-space:nowrap}
+.search button:hover{background:rgba(255,255,255,.3)}
+#results{position:absolute;top:50px;left:0;right:0;background:#fff;color:var(--ink);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.2);z-index:2000;overflow:hidden;display:none}
+#results div{padding:11px 14px;border-bottom:1px solid var(--line);cursor:pointer}
+#results div:hover{background:#f1f5f9}
+#results small{color:var(--mute)}
+main{margin-top:-58px;padding:0 12px 40px}
+.card{background:var(--card);border-radius:var(--r);box-shadow:0 2px 10px rgba(15,23,42,.06);padding:16px;margin-bottom:14px}
+.now{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;align-items:center}
+.now .ic{font-size:64px;line-height:1}
+.now .t{font-size:52px;font-weight:800;letter-spacing:-2px}
+.now .loc{font-weight:700;font-size:18px}
+.mute{color:var(--mute)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{background:#f1f5f9;border-radius:999px;padding:5px 11px;font-size:13px}
+.chip b{font-weight:700}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin:0 0 14px;padding-bottom:2px;scrollbar-width:none}
+.tabs button{border:0;background:#fff;border-radius:999px;padding:9px 15px;font:inherit;font-weight:600;color:var(--mute);cursor:pointer;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.tabs button.on{background:var(--acc);color:#fff}
+.view{display:none}.view.on{display:block}
+h2{font-size:17px;margin:0 0 4px}
+h3{font-size:15px;margin:14px 0 6px}
+.sub{color:var(--mute);font-size:13px;margin:0 0 12px}
+.days{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px}
+.day{min-width:92px;background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:10px 8px;text-align:center;flex:0 0 auto;cursor:pointer}
+.day:hover{border-color:var(--acc)}
+.day .dn{font-weight:700;font-size:13px}.day .dd{font-size:11px;color:var(--mute)}
+.day .i{font-size:30px;margin:4px 0}
+.day .mx{font-weight:800}.day .mn{color:var(--mute)}
+.day .pp{font-size:12px;color:#0369a1;margin-top:2px}
+.badge{display:inline-block;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:700;color:#fff;margin-top:5px}
+.g{background:var(--ok)}.y{background:var(--mid)}.r{background:var(--bad)}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.kpi{background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:12px}
+.kpi .v{font-size:26px;font-weight:800}
+.kpi .l{font-size:12px;color:var(--mute)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--mute);font-weight:600;font-size:12px;position:sticky;top:0;background:#fff}
+.tscroll{overflow-x:auto;max-height:520px}
+.bar{height:6px;border-radius:3px;background:#e2e8f0;overflow:hidden;min-width:60px}
+.bar i{display:block;height:100%;background:var(--acc)}
+.seg{display:inline-flex;background:#f1f5f9;border-radius:10px;padding:3px;gap:2px;margin-bottom:10px;flex-wrap:wrap}
+.seg button{border:0;background:none;padding:6px 11px;border-radius:8px;font:inherit;font-size:13px;font-weight:600;color:var(--mute);cursor:pointer}
+.seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.chart{position:relative;height:260px}
+.chart.sm{height:180px}
+#map{height:460px;border-radius:12px}
+.src{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
+.src:last-child{border:0}
+.pill{font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;white-space:nowrap}
+.pill.ok{background:#dcfce7;color:#166534}.pill.hata{background:#fee2e2;color:#991b1b}.pill.bekliyor{background:#f1f5f9;color:#475569}
+.summary{background:linear-gradient(135deg,#eff6ff,#f0f9ff);border:1px solid #dbeafe;border-radius:14px;padding:12px 14px}
+.summary li{margin:3px 0}
+.summary ul{margin:6px 0 0;padding-left:18px}
+#loading{position:fixed;inset:0;background:rgba(238,243,249,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:3000;gap:12px;font-weight:600}
+.spin{width:42px;height:42px;border:4px solid #cbd5e1;border-top-color:var(--acc);border-radius:50%;animation:s 1s linear infinite}
+@keyframes s{to{transform:rotate(360deg)}}
+#lstat{font-size:13px;color:var(--mute);font-weight:500;text-align:center;max-width:320px}
+.legend{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+.legend label{font-size:12px;background:#f8fafc;border:1px solid var(--line);border-radius:999px;padding:3px 9px;cursor:pointer;display:flex;align-items:center;gap:5px}
+.legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.note{font-size:12px;color:var(--mute)}
+.method p{margin:6px 0}
+.method code{background:#f1f5f9;padding:1px 5px;border-radius:5px;font-size:12px}
+a{color:var(--acc)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.score{font-size:44px;font-weight:800}
+@media(max-width:600px){.now .t{font-size:44px}.now .ic{font-size:52px}#map{height:380px}.chart{height:230px}}
+</style>
+</head>
+<body>
+<div id="loading"><div class="spin"></div><div>Veriler toplanıyor…</div><div id="lstat"></div></div>
+<header><div class="wrap">
+  <div class="brand">🌐 Konsensüs Hava <small>9 küresel model · 3 ansambl · uydu & radar</small></div>
+  <div class="search">
+    <input id="q" placeholder="Şehir veya ilçe ara (ör. Kadıköy, Ankara)" autocomplete="off">
+    <button id="gps">📍 Konumum</button>
+    <div id="results"></div>
+  </div>
+</div></header>
+
+<main><div class="wrap">
+  <div class="card" id="nowCard"></div>
+
+  <div class="tabs" id="tabs">
+    <button data-v="ozet" class="on">Özet</button>
+    <button data-v="saatlik">Saatlik</button>
+    <button data-v="gunluk">16 Gün</button>
+    <button data-v="dogruluk">Doğruluk & Tutarlılık</button>
+    <button data-v="harita">Uydu & Radar</button>
+    <button data-v="kaynak">Kaynaklar & Yöntem</button>
+  </div>
+
+  <section class="view on" id="v-ozet">
+    <div class="card"><h2>Akıllı özet</h2><p class="sub">Model konsensüsünden kural tabanlı olarak üretilir.</p><div id="summary"></div></div>
+    <div class="card"><h2>16 günlük tahmin</h2><p class="sub">Rozet = en yüksek sıcaklığın ±2 °C içinde çıkma olasılığı (bu konumun geçmiş hata istatistiğinden).</p><div class="days" id="dayStrip"></div></div>
+    <div class="card"><div class="grid" id="ozetKpi"></div></div>
+  </section>
+
+  <section class="view" id="v-saatlik">
+    <div class="card">
+      <h2>Saatlik sıcaklık</h2><p class="sub">Kalın çizgi: ağırlıklı konsensüs · gölge: %80 güven aralığı · ince çizgiler: tek tek modeller</p>
+      <div class="seg" id="hRange"><button data-h="48" class="on">48 saat</button><button data-h="168">7 gün</button><button data-h="384">16 gün</button></div>
+      <div class="legend" id="mLegend"></div>
+      <div class="chart"><canvas id="cT"></canvas></div>
+      <h3>Yağış (mm/saat) ve yağış olasılığı</h3>
+      <div class="chart sm"><canvas id="cP"></canvas></div>
+      <h3>Rüzgâr ve hamle (km/sa)</h3>
+      <div class="chart sm"><canvas id="cW"></canvas></div>
+    </div>
+    <div class="card"><h2>Saat saat (48 saat)</h2><div class="tscroll"><table id="hTable"></table></div></div>
+  </section>
+
+  <section class="view" id="v-gunluk">
+    <div class="card"><h2>16 günlük sıcaklık bandı</h2><p class="sub">Kesikli çizgiler: 2016–2025 ERA5 mevsim normali</p><div class="chart"><canvas id="cD"></canvas></div></div>
+    <div class="card"><h2>Günlük ayrıntı</h2><div class="tscroll"><table id="dTable"></table></div>
+      <p class="note">Uyum: modeller arası yayılım (°C). Değişim: dünkü model çalıştırmasına göre en yüksek sıcaklıktaki ortalama değişim. 8. günden sonra tahmin, ölçülen beceriye göre mevsim normaline doğru sönümlenir.</p></div>
+  </section>
+
+  <section class="view" id="v-dogruluk">
+    <div class="card"><h2>Bu konumda tahmin doğruluğu</h2><p class="sub" id="verSub"></p><div class="grid" id="verKpi"></div></div>
+    <div class="card"><h2>Model karnesi</h2><p class="sub">Geçmiş tahminler ERA5 yeniden analizine karşı (saatlik sıcaklık). Ağırlık = 1/RMSE², öğrenilmiş sapma (bias) çıkarılarak kullanılır.</p>
+      <div class="seg" id="leadSel"></div>
+      <div class="tscroll"><table id="mTable"></table></div></div>
+    <div class="card"><h2>Öngörü süresine göre beceri</h2><p class="sub">MSESS: mevsim normaline göre hata azaltma oranı (1 = mükemmel, 0 = normalden iyi değil)</p><div class="chart sm"><canvas id="cS"></canvas></div></div>
+    <div class="card"><h2>Konum hava tutarlılığı</h2><p class="sub">Bu yerde havanın ne kadar istikrarlı ve tahmin edilebilir olduğu</p><div id="consist"></div></div>
+    <div class="card"><h2>Günlük tutarlılık: dünkü tahmine göre</h2><p class="sub">Model çalıştırmaları arasında tahmin ne kadar oynadı? Düşük değişim = kararlı tahmin.</p><div class="chart sm"><canvas id="cC"></canvas></div></div>
+    <div class="card"><h2>Bu cihazdaki kayıtlarım</h2><p class="sub">Siteyi her açtığında tahmin kaydedilir; günler geçtikçe gerçekleşen değerlerle karşılaştırılır.</p><div id="mylog"></div><div id="srvlog"></div></div>
+  </section>
+
+  <section class="view" id="v-harita">
+    <div class="card"><h2>Uydu görüntüsü ve radar</h2>
+      <p class="sub">Sağ üstteki katman menüsünden seç. NASA uydu katmanları günlük geçiştir (tarih seçilebilir); radar son 2 saati oynatır.</p>
+      <div class="row" style="margin-bottom:10px">
+        <label class="note">Uydu tarihi <input type="date" id="satDate"></label>
+        <button class="chip" id="radarPlay" style="border:0;cursor:pointer">▶ Radarı oynat</button>
+        <span class="note" id="radarTime"></span>
+      </div>
+      <div id="map"></div>
+      <p class="note">Canlı (10–15 dk) Meteosat görüntüsü için: <a href="https://view.eumetsat.int" target="_blank" rel="noopener">EUMETView</a> · rüzgâr akışı: <a href="https://earth.nullschool.net" target="_blank" rel="noopener">earth.nullschool.net</a></p>
+    </div>
+  </section>
+
+  <section class="view" id="v-kaynak">
+    <div class="card"><h2>Kullanılan veri kaynakları</h2><p class="sub">Bu yükleme için her kaynağın durumu.</p><div id="srcList"></div></div>
+    <div class="card method" id="method"></div>
+  </section>
+</div></main>
+
+<script>
+"use strict";
+/* ============ yardımcılar ============ */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ok=v=>v!=null&&!Number.isNaN(v);
+const fmt=(v,d=0)=>ok(v)?(+v).toFixed(d):'–';
+const mean=a=>{const b=a.filter(ok);return b.length?b.reduce((s,x)=>s+x,0)/b.length:null};
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const SQ2=Math.SQRT2;
+function erf(x){const s=Math.sign(x);x=Math.abs(x);const t=1/(1+0.3275911*x);const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);return s*y}
+function addDays(ds,n){const d=new Date(ds+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)}
+function dayDiff(a,b){return Math.round((Date.parse(b+'T12:00:00Z')-Date.parse(a+'T12:00:00Z'))/864e5)}
+function doyOf(ds){const d=new Date(ds+'T12:00:00Z');return Math.floor((d-Date.UTC(d.getUTCFullYear(),0,1))/864e5)}
+const DN=['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
+const MN=['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+function dname(ds,today){const n=dayDiff(today,ds);if(n===0)return'Bugün';if(n===1)return'Yarın';return DN[new Date(ds+'T12:00:00Z').getUTCDay()]}
+function dshort(ds){const d=new Date(ds+'T12:00:00Z');return d.getUTCDate()+' '+MN[d.getUTCMonth()]}
+function store(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+function load(k,def){try{const v=localStorage.getItem(k);return v?JSON.parse(v):def}catch(e){return def}}
+function status(t){$('#lstat').textContent=t}
+
+async function getJSON(url,timeout=30000){
+  const c=new AbortController();const id=setTimeout(()=>c.abort(),timeout);
+  try{const r=await fetch(url,{signal:c.signal});const txt=await r.text();let j;try{j=JSON.parse(txt)}catch(e){throw new Error('HTTP '+r.status)}
+    if(!r.ok||j.error)throw new Error(j.reason||('HTTP '+r.status));return j}
+  finally{clearTimeout(id)}
+}
+
+/* ============ kaynaklar ============ */
+const MODELS=[
+ {id:'ecmwf_ifs025',name:'ECMWF IFS',org:'Avrupa Orta Vadeli Hava Tahminleri Merkezi',kind:'Fizik tabanlı sayısal model',res:'~25 km',col:'#2563eb'},
+ {id:'ecmwf_aifs025_single',name:'ECMWF AIFS',org:'ECMWF',kind:'Yapay zekâ modeli (makine öğrenmesi)',res:'~25 km',col:'#9333ea'},
+ {id:'gfs_seamless',name:'NOAA GFS',org:'ABD Ulusal Okyanus ve Atmosfer İdaresi',kind:'Fizik tabanlı sayısal model',res:'~13–25 km',col:'#dc2626'},
+ {id:'icon_seamless',name:'DWD ICON',org:'Alman Meteoroloji Servisi',kind:'Fizik tabanlı sayısal model',res:'~7–13 km',col:'#16a34a'},
+ {id:'gem_seamless',name:'CMC GEM',org:'Kanada Meteoroloji Merkezi',kind:'Fizik tabanlı sayısal model',res:'~15–25 km',col:'#ea580c'},
+ {id:'jma_seamless',name:'JMA GSM',org:'Japonya Meteoroloji Ajansı',kind:'Fizik tabanlı sayısal model',res:'~20–55 km',col:'#0891b2'},
+ {id:'meteofrance_seamless',name:'Météo-France ARPEGE',org:'Fransa Meteoroloji Servisi',kind:'Fizik tabanlı sayısal model',res:'~10–25 km',col:'#db2777'},
+ {id:'ukmo_seamless',name:'UK Met Office',org:'Birleşik Krallık Met Office',kind:'Fizik tabanlı sayısal model',res:'~10 km',col:'#475569'},
+ {id:'cma_grapes_global',name:'CMA GRAPES',org:'Çin Meteoroloji İdaresi',kind:'Fizik tabanlı sayısal model',res:'~25 km',col:'#ca8a04'},
+];
+const ENS=[
+ {id:'ecmwf_ifs025',name:'ECMWF ENS',org:'ECMWF — 51 üyeli ansambl, 15 gün'},
+ {id:'gfs025',name:'NOAA GEFS',org:'NOAA — 31 üyeli ansambl, 16 gün'},
+ {id:'icon_seamless',name:'DWD ICON-EPS',org:'DWD — 40 üyeli ansambl, 7,5 gün'},
+];
+let SRC={};
+function initSources(){
+  SRC={};
+  const add=(k,name,desc,url)=>SRC[k]={name,desc,url,status:'bekliyor',info:''};
+  add('main','Open-Meteo anlık + en iyi eşleşme','Anlık gözlem/analiz değerleri, gün doğumu/batımı, UV, son 10 günün gerçekleşen değerleri','https://open-meteo.com');
+  for(const m of MODELS)add('m_'+m.id,m.name+' (deterministik)',m.org+' · '+m.kind+' · '+m.res,'https://open-meteo.com/en/docs');
+  for(const e of ENS)add('e_'+e.id,e.name,e.org+' · olasılık ve belirsizlik için','https://open-meteo.com/en/docs/ensemble-api');
+  for(const m of MODELS)add('p_'+m.id,m.name+' geçmiş çalıştırmalar','1–7 gün önce yapılmış tahminler → doğruluk ve kararlılık hesabı','https://open-meteo.com/en/docs/previous-runs-api');
+  add('era','ERA5 yeniden analiz (son ~5 hafta)','ECMWF/Copernicus — uydu, radyosonde, yer istasyonu, şamandıra ve uçak gözlemlerinin asimilasyonu. Doğrulamada "gerçek" olarak kullanılır.','https://open-meteo.com/en/docs/historical-weather-api');
+  add('clim','ERA5 iklim normali 2016–2025','10 yıllık günlük değerler → mevsim normali, değişkenlik, tutarlılık','https://open-meteo.com/en/docs/historical-weather-api');
+  add('gibs','NASA GIBS uydu katmanları','VIIRS (NOAA-20, Suomi-NPP) ve MODIS (Terra) gerçek renk görüntüler','https://earthdata.nasa.gov/gibs');
+  add('radar','RainViewer radar mozaiği','Ulusal radar ağlarından derlenen son 2 saatlik yağış radarı','https://www.rainviewer.com/api.html');
+  add('geo','Open-Meteo Geocoding + BigDataCloud','Konum arama ve ters coğrafi kodlama','https://open-meteo.com/en/docs/geocoding-api');
+}
+function setSrc(k,good,info){if(SRC[k]){SRC[k].status=good?'ok':'hata';SRC[k].info=info||''}}
+
+/* ============ durum ============ */
+let D={},V={},F={},LOC=null,charts={},hRangeH=48,leadView=1;
+
+/* ============ veri çekme ============ */
+const HV=['temperature_2m','precipitation','wind_speed_10m','wind_gusts_10m','wind_direction_10m','relative_humidity_2m','cloud_cover','weather_code','pressure_msl'];
+const key=(o,v,id)=>o[v]!==undefined?o[v]:o[v+'_'+id];
+function mapIdx(times){const m=new Map();times.forEach((t,i)=>m.set(t,i));return m}
+
+async function fetchAll(lat,lon){
+  const ll=`latitude=${lat}&longitude=${lon}&timezone=auto`;
+  let done=0;const total=MODELS.length*2+ENS.length+3;
+  const tick=()=>status(`${++done}/${total} kaynak yüklendi`);
+  const jobs=[];
+  jobs.push(getJSON(`https://api.open-meteo.com/v1/forecast?${ll}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code,pressure_msl,cloud_cover,precipitation,is_day&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,sunrise,sunset,uv_index_max&past_days=10&forecast_days=16`)
+    .then(j=>{D.main=j;setSrc('main',true,'Analiz zamanı '+j.current.time.replace('T',' '))}).catch(e=>setSrc('main',false,e.message)).finally(tick));
+  for(const m of MODELS){
+    jobs.push(getJSON(`https://api.open-meteo.com/v1/forecast?${ll}&forecast_days=16&hourly=${HV.join(',')}&models=${m.id}`)
+      .then(j=>{const h={time:j.hourly.time};for(const v of HV)h[v]=key(j.hourly,v,m.id)||[];
+        const n=h.temperature_2m.filter(ok).length;if(!n)throw new Error('Bu konum için veri yok');
+        h.map=mapIdx(h.time);D.fc[m.id]=h;setSrc('m_'+m.id,true,Math.round(n/24)+' günlük ufuk')})
+      .catch(e=>setSrc('m_'+m.id,false,e.message)).finally(tick));
+    const pv=[];for(const v of ['temperature_2m','precipitation','wind_speed_10m']){pv.push(v);for(let L=1;L<=7;L++)pv.push(v+'_previous_day'+L)}
+    jobs.push(getJSON(`https://previous-runs-api.open-meteo.com/v1/forecast?${ll}&past_days=40&forecast_days=8&hourly=${pv.join(',')}&models=${m.id}`)
+      .then(j=>{const h={time:j.hourly.time};for(const v of pv)h[v]=key(j.hourly,v,m.id)||null;
+        if(!h['temperature_2m_previous_day1']||!h['temperature_2m_previous_day1'].some(ok))throw new Error('Arşiv yok');
+        D.prev[m.id]=h;setSrc('p_'+m.id,true,'40 günlük çalıştırma arşivi')})
+      .catch(e=>setSrc('p_'+m.id,false,e.message)).finally(tick));
+  }
+  for(const e of ENS){
+    jobs.push(getJSON(`https://ensemble-api.open-meteo.com/v1/ensemble?${ll}&forecast_days=16&hourly=temperature_2m,precipitation&models=${e.id}`)
+      .then(j=>{const h=j.hourly;const o={time:h.time,map:mapIdx(h.time),temp:[],prec:[]};
+        for(const k in h){if(k.startsWith('temperature_2m'))o.temp.push(h[k]);else if(k.startsWith('precipitation'))o.prec.push(h[k])}
+        if(!o.temp.length)throw new Error('Üye verisi yok');D.ens[e.id]=o;setSrc('e_'+e.id,true,o.temp.length+' üye')})
+      .catch(er=>setSrc('e_'+e.id,false,er.message)).finally(tick));
+  }
+  const today=new Date().toISOString().slice(0,10);
+  jobs.push(getJSON(`https://archive-api.open-meteo.com/v1/archive?${ll}&start_date=${addDays(today,-40)}&end_date=${addDays(today,-3)}&hourly=temperature_2m,precipitation,wind_speed_10m`)
+    .then(j=>{D.era=j.hourly;D.era.map=mapIdx(j.hourly.time);const n=j.hourly.temperature_2m.filter(ok).length;if(n<24*7)throw new Error('Yetersiz veri');setSrc('era',true,Math.floor(n/24)+' gün')})
+    .catch(e=>setSrc('era',false,e.message)).finally(tick));
+  jobs.push(getJSON(`https://archive-api.open-meteo.com/v1/archive?${ll}&start_date=2016-01-01&end_date=2025-12-31&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max`,45000)
+    .then(j=>{D.clim=j.daily;setSrc('clim',true,j.daily.time.length+' gün')})
+    .catch(e=>setSrc('clim',false,e.message)).finally(tick));
+  await Promise.all(jobs);
+}
+
+/* ============ istatistik ============ */
+function stats(errs){const n=errs.length;if(n<5)return null;let s=0,sa=0,sq=0,h=0;for(const e of errs){s+=e;sa+=Math.abs(e);sq+=e*e;if(Math.abs(e)<=2)h++}return{n,bias:s/n,mae:sa/n,rmse:Math.sqrt(sq/n),hit:h/n}}
+function daily(times,arr,how,minN=20){
+  const g={};if(!arr)return g;times.forEach((t,i)=>{const v=arr[i];if(!ok(v))return;const d=t.slice(0,10);(g[d]=g[d]||[]).push(v)});
+  const o={};for(const d in g){const a=g[d];if(a.length<minN)continue;o[d]=how==='max'?Math.max(...a):how==='min'?Math.min(...a):a.reduce((s,x)=>s+x,0)}return o}
+function wstd(vals,ws,mu){let s=0,sw=0;vals.forEach((v,i)=>{s+=ws[i]*(v-mu)**2;sw+=ws[i]});return sw?Math.sqrt(s/sw):0}
+function sd(a){const m=mean(a);if(m==null||a.length<2)return 0;return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/(a.length-1))}
+
+/* ---- iklim normali ---- */
+let CL=null;
+function buildClim(){
+  CL=null;if(!D.clim)return;
+  const c=D.clim,t=c.time,N=t.length;const doy=t.map(doyOf);
+  const byDoy=[];for(let k=0;k<366;k++){const tx=[],tn=[],ps=[],wm=[];
+    for(let i=0;i<N;i++){let d=Math.abs(doy[i]-k);d=Math.min(d,365-d);if(d<=7){if(ok(c.temperature_2m_max[i]))tx.push(c.temperature_2m_max[i]);if(ok(c.temperature_2m_min[i]))tn.push(c.temperature_2m_min[i]);if(ok(c.precipitation_sum[i]))ps.push(c.precipitation_sum[i]);if(ok(c.wind_speed_10m_max[i]))wm.push(c.wind_speed_10m_max[i])}}
+    byDoy.push({tmax:mean(tx),tmaxSd:sd(tx),tmin:mean(tn),tminSd:sd(tn),wet:ps.length?ps.filter(p=>p>=0.5).length/ps.length:null,psum:mean(ps),wmax:mean(wm)})}
+  CL={byDoy,doy};
+}
+const climFor=ds=>CL?CL.byDoy[Math.min(doyOf(ds),365)]:null;
+
+/* ---- doğrulama ---- */
+function runVerification(){
+  V={models:{},blend:{},ok:false,days:0};
+  if(!D.era)return;
+  const E=D.era,em=E.map;
+  const eT=E.temperature_2m,eP=E.precipitation,eW=E.wind_speed_10m;
+  const eD={tmax:daily(E.time,eT,'max'),psum:daily(E.time,eP,'sum')};
+  V.days=Object.keys(eD.tmax).length;
+  for(const m of MODELS){const p=D.prev[m.id];if(!p)continue;const R={};
+    for(let L=1;L<=7;L++){const ft=p['temperature_2m_previous_day'+L],fw=p['wind_speed_10m_previous_day'+L],fp=p['precipitation_previous_day'+L];if(!ft)continue;
+      const et=[],ew=[];p.time.forEach((t,i)=>{const j=em.get(t);if(j==null)return;if(ok(ft[i])&&ok(eT[j]))et.push(ft[i]-eT[j]);if(fw&&ok(fw[i])&&ok(eW[j]))ew.push(fw[i]-eW[j])});
+      if(et.length<72)continue;const sT=stats(et);
+      const dmax=daily(p.time,ft,'max');const ex=[];for(const d in dmax)if(ok(eD.tmax[d]))ex.push(dmax[d]-eD.tmax[d]);
+      R[L]={t:sT,w:stats(ew),tmax:stats(ex),...precipScore(daily(p.time,fp,'sum'),eD.psum)};
+    }
+    if(Object.keys(R).length)V.models[m.id]=R;
+  }
+  if(!Object.keys(V.models).length)return;
+  V.ok=true;
+  // konsensüs (blend) geriye dönük
+  const ref=Object.values(D.prev)[0];
+  for(let L=1;L<=7;L++){
+    const bt=new Array(ref.time.length).fill(null),bp=new Array(ref.time.length).fill(null),et=[];
+    ref.time.forEach((t,i)=>{const j=em.get(t);if(j==null)return;const vs=[],ws=[],ps=[],pw=[];
+      for(const m of MODELS){const p=D.prev[m.id];if(!p)continue;const ft=p['temperature_2m_previous_day'+L];const fp=p['precipitation_previous_day'+L];const W=weightOf(m.id,L);if(!W)continue;
+        if(ft&&ok(ft[i])){vs.push(ft[i]-W.b);ws.push(W.w)}if(fp&&ok(fp[i])){ps.push(fp[i]);pw.push(W.w)}}
+      if(vs.length){const mu=vs.reduce((s,v,k)=>s+v*ws[k],0)/ws.reduce((a,b)=>a+b,0);bt[i]=mu;if(ok(eT[j]))et.push(mu-eT[j])}
+      if(ps.length)bp[i]=ps.reduce((s,v,k)=>s+v*pw[k],0)/pw.reduce((a,b)=>a+b,0)});
+    const sT=stats(et);if(!sT)continue;
+    const dmax=daily(ref.time,bt,'max');const ex=[],ec=[];
+    for(const d in dmax){if(!ok(eD.tmax[d]))continue;ex.push(dmax[d]-eD.tmax[d]);const c=climFor(d);if(c&&ok(c.tmax))ec.push(c.tmax-eD.tmax[d])}
+    const sx=stats(ex),sc=stats(ec);
+    V.blend[L]={t:sT,tmax:sx,clim:sc,msess:(sx&&sc)?1-(sx.rmse**2)/(sc.rmse**2):null,...precipScore(daily(ref.time,bp,'sum'),eD.psum)};
+  }
+}
+function precipScore(fd,od){let n=0,c=0,h=0,mi=0,fa=0;for(const d in fd){const o=od[d];if(!ok(o))continue;n++;const f=fd[d]>=1,w=o>=1;if(f===w)c++;if(f&&w)h++;if(!f&&w)mi++;if(f&&!w)fa++}
+  return{pN:n,pAcc:n?c/n:null,pod:(h+mi)?h/(h+mi):null,far:(h+fa)?fa/(h+fa):null}}
+function weightOf(id,L){
+  const R=V.models&&V.models[id];
+  if(R){for(let l=clamp(L,1,7);l>=1;l--)if(R[l]&&R[l].t){const s=R[l].t;return{w:1/Math.max(s.rmse,0.4)**2,b:s.bias,known:true}}}
+  // bilinmiyorsa: diğerlerinin medyanının %70'i
+  const ws=[];for(const k in (V.models||{})){const r=V.models[k][clamp(L,1,7)];if(r&&r.t)ws.push(1/Math.max(r.t.rmse,0.4)**2)}
+  if(!ws.length)return{w:1,b:0,known:false};
+  ws.sort((a,b)=>a-b);return{w:ws[Math.floor(ws.length/2)]*0.7,b:0,known:false};
+}
+// 1..7 değerlerinden doğrusal uzatma
+function extLead(get,L,def){
+  const xs=[],ys=[];for(let l=1;l<=7;l++){const v=get(l);if(ok(v)){xs.push(l);ys.push(v)}}
+  if(xs.length<2)return def(L);
+  if(L>=1&&L<=7){const v=get(L);if(ok(v))return v}
+  const mx=mean(xs),my=mean(ys);let a=0,b=0;xs.forEach((x,i)=>{a+=(x-mx)*(ys[i]-my);b+=(x-mx)**2});const sl=b?a/b:0;
+  const Lc=Math.max(L,1);return my+sl*(Lc-mx);
+}
+const rmseHourly=L=>V.ok?Math.max(0.5,extLead(l=>V.blend[l]&&V.blend[l].t.rmse,L,l=>1+0.3*l)):1+0.3*Math.max(L,1);
+const rmseTmax=L=>V.ok?Math.max(0.6,extLead(l=>V.blend[l]&&V.blend[l].tmax&&V.blend[l].tmax.rmse,L,l=>1.2+0.35*l)):1.2+0.35*Math.max(L,1);
+const skillAt=L=>V.ok?extLead(l=>V.blend[l]&&V.blend[l].msess,L,l=>1-l/16):clamp(1-Math.max(L,1)/16,0,1);
+
+/* ---- tahmin üretimi ---- */
+function buildForecast(){
+  F={hours:[],days:[]};
+  const base=MODELS.map(m=>D.fc[m.id]).find(Boolean);if(!base)return;
+  const now=D.main?D.main.current.time:new Date().toISOString().slice(0,16);
+  const today=now.slice(0,10);F.today=today;F.now=now;
+  const ensList=Object.values(D.ens);
+  base.time.forEach(t=>{
+    const d=t.slice(0,10),L=dayDiff(today,d);const Lw=Math.max(L,1);
+    const T=[],Tw=[],P=[],Pw=[],Wv=[],Ww=[],G=[],U=[],Vv=[],RH=[],CC=[],PR=[],codes=[],per={};
+    for(const m of MODELS){const f=D.fc[m.id];if(!f)continue;const i=f.map.get(t);if(i==null)continue;const W=weightOf(m.id,Lw);
+      const x=f.temperature_2m[i];if(ok(x)){T.push(x-W.b);Tw.push(W.w);per[m.id]=x-W.b}
+      if(ok(f.precipitation[i])){P.push(f.precipitation[i]);Pw.push(W.w)}
+      if(ok(f.wind_speed_10m[i])){Wv.push(f.wind_speed_10m[i]);Ww.push(W.w);if(ok(f.wind_direction_10m[i])){const r=f.wind_direction_10m[i]*Math.PI/180;U.push(Math.sin(r)*W.w);Vv.push(Math.cos(r)*W.w)}}
+      if(ok(f.wind_gusts_10m[i]))G.push(f.wind_gusts_10m[i]);
+      if(ok(f.relative_humidity_2m[i]))RH.push(f.relative_humidity_2m[i]);
+      if(ok(f.cloud_cover[i]))CC.push(f.cloud_cover[i]);
+      if(ok(f.pressure_msl[i]))PR.push(f.pressure_msl[i]);
+      if(ok(f.weather_code[i]))codes.push(f.weather_code[i]);
+    }
+    if(!T.length)return;
+    const sw=Tw.reduce((a,b)=>a+b,0);const temp=T.reduce((s,v,k)=>s+v*Tw[k],0)/sw;
+    const spread=wstd(T,Tw,temp);
+    const prec=P.length?P.reduce((s,v,k)=>s+v*Pw[k],0)/Pw.reduce((a,b)=>a+b,0):0;
+    const wind=Wv.length?Wv.reduce((s,v,k)=>s+v*Ww[k],0)/Ww.reduce((a,b)=>a+b,0):null;
+    let dir=null;if(U.length){dir=(Math.atan2(U.reduce((a,b)=>a+b,0),Vv.reduce((a,b)=>a+b,0))*180/Math.PI+360)%360}
+    // ansambl
+    const em=[],pm=[];for(const e of ensList){const j=e.map.get(t);if(j==null)continue;for(const a of e.temp)if(ok(a[j]))em.push(a[j]);for(const a of e.prec)if(ok(a[j]))pm.push(a[j])}
+    const ensSd=em.length>5?sd(em):null;
+    const detWet=P.length?P.reduce((s,v,k)=>s+(v>=0.1?Pw[k]:0),0)/Pw.reduce((a,b)=>a+b,0):null;
+    const ensWet=pm.length>5?pm.filter(v=>v>=0.1).length/pm.length:null;
+    const pop=ensWet!=null?(detWet!=null?0.65*ensWet+0.35*detWet:ensWet):detWet;
+    const sig=Math.max(rmseHourly(Lw),spread,ensSd||0);
+    const thunder=codes.filter(c=>c>=95).length>=Math.max(2,codes.length/3);
+    const fog=codes.filter(c=>c===45||c===48).length>codes.length/2;
+    F.hours.push({t,d,L,temp,spread,sig,ensSd,prec,pop,wind,dir,gust:G.length?mean(G):null,rh:mean(RH),cloud:mean(CC),pres:mean(PR),thunder,fog,per,n:T.length});
+  });
+  // günlükler
+  const byD={};F.hours.forEach(h=>(byD[h.d]=byD[h.d]||[]).push(h));
+  const s1=skillAt(1),s7=skillAt(7);
+  for(const d of Object.keys(byD).sort()){
+    const hs=byD[d];if(hs.length<18)continue;const L=dayDiff(today,d);if(L<0)continue;const Lw=Math.max(L,1);
+    let fmax=Math.max(...hs.map(h=>h.temp)),fmin=Math.min(...hs.map(h=>h.temp));
+    // model başına günlük max (yayılım) ve kararlılık
+    const mx=[],mw=[],psD=[],pwD=[];
+    for(const m of MODELS){const vals=hs.map(h=>h.per[m.id]).filter(ok);if(vals.length>=18){mx.push(Math.max(...vals));mw.push(weightOf(m.id,Lw).w)}
+      const f=D.fc[m.id];if(f){let s=0,n=0;for(const h of hs){const i=f.map.get(h.t);if(i!=null&&ok(f.precipitation[i])){s+=f.precipitation[i];n++}}if(n>=18){psD.push(s);pwD.push(weightOf(m.id,Lw).w)}}}
+    const mu=mx.length?mx.reduce((s,v,k)=>s+v*mw[k],0)/mw.reduce((a,b)=>a+b,0):fmax;
+    const spread=mx.length>1?wstd(mx,mw,mu):0;
+    // ansambl günlük
+    let ensSd=null,pEns=null;const emx=[],wetM=[];
+    for(const e of Object.values(D.ens)){for(let k=0;k<e.temp.length;k++){const tv=[],pv=[];for(const h of hs){const j=e.map.get(h.t);if(j==null)continue;if(ok(e.temp[k][j]))tv.push(e.temp[k][j]);if(e.prec[k]&&ok(e.prec[k][j]))pv.push(e.prec[k][j])}
+      if(tv.length>=18)emx.push(Math.max(...tv));if(pv.length>=18)wetM.push(pv.reduce((a,b)=>a+b,0)>=0.5?1:0)}}
+    if(emx.length>5)ensSd=sd(emx);if(wetM.length>5)pEns=mean(wetM);
+    const pDet=psD.length?psD.reduce((s,v,k)=>s+(v>=0.5?pwD[k]:0),0)/pwD.reduce((a,b)=>a+b,0):null;
+    let pF=pEns!=null?(pDet!=null?0.65*pEns+0.35*pDet:pEns):(pDet??0);
+    const c=climFor(d);
+    let sig=Math.max(rmseTmax(Lw),spread,ensSd||0);
+    let tmax=fmax,tmin=fmin,damp=1;
+    if(L>=8&&c&&ok(c.tmax)){
+      damp=clamp(skillAt(L)/Math.max(s7,0.05),0.25,1);
+      tmax=c.tmax+damp*(fmax-c.tmax);tmin=c.tmin+damp*(fmin-c.tmin);
+      sig=Math.min(sig,(c.tmaxSd||sig)*1.25);
+      const sh=((tmax-fmax)+(tmin-fmin))/2;hs.forEach(h=>h.temp+=sh);
+    }
+    const a=L<=1?1:clamp(skillAt(L)/Math.max(s1,0.05),0.15,1);
+    const pop=c&&ok(c.wet)?a*pF+(1-a)*c.wet:pF;
+    const psum=psD.length?psD.reduce((s,v,k)=>s+v*pwD[k],0)/pwD.reduce((a,b)=>a+b,0):hs.reduce((s,h)=>s+h.prec,0);
+    // kararlılık: bugünkü çalıştırma vs dünkü
+    const ch=[];for(const m of MODELS){const p=D.prev[m.id];if(!p)continue;const a0=daily(p.time,p.temperature_2m,'max')[d],a1=daily(p.time,p['temperature_2m_previous_day1'],'max')[d];if(ok(a0)&&ok(a1))ch.push(Math.abs(a0-a1))}
+    const day=hs.filter(h=>{const hr=+h.t.slice(11,13);return hr>=9&&hr<=18});
+    F.days.push({d,L,tmax,tmin,sig,conf:erf(2/(sig*SQ2)),spread,ensSd,pop:clamp(pop,0,1),pEns,pDet,psum,
+      wind:Math.max(...hs.map(h=>h.wind||0)),gust:Math.max(...hs.map(h=>h.gust||0)),
+      cloud:mean(day.map(h=>h.cloud)),thunder:hs.some(h=>h.thunder),fog:day.filter(h=>h.fog).length>4,
+      change:ch.length?mean(ch):null,damp,clim:c,nModels:mx.length,nEns:emx.length});
+  }
+}
+
+/* ---- ikon ---- */
+function iconOf({cloud,prec=0,psum,pop,temp,thunder,fog,night}){
+  const wet=psum!=null?(psum>=1&&pop>=0.4):(prec>=0.1);
+  if(thunder&&wet)return['⛈️','Gök gürültülü sağanak'];
+  if(wet){if(temp!=null&&temp<=1)return['🌨️','Kar'];const heavy=psum!=null?psum>=10:prec>=2.5;return heavy?['🌧️','Kuvvetli yağmur']:(cloud!=null&&cloud<70?['🌦️','Sağanak']:['🌧️','Yağmur'])}
+  if(fog)return['🌫️','Sis'];
+  if(cloud==null)return['❔','–'];
+  if(cloud<20)return night?['🌙','Açık']:['☀️','Güneşli'];
+  if(cloud<50)return night?['🌙','Az bulutlu']:['🌤️','Az bulutlu'];
+  if(cloud<85)return['⛅','Parçalı bulutlu'];
+  return['☁️','Kapalı'];
+}
+const WMO={0:'Açık',1:'Çoğunlukla açık',2:'Parçalı bulutlu',3:'Kapalı',45:'Sis',48:'Kırağılı sis',51:'Hafif çisenti',53:'Çisenti',55:'Yoğun çisenti',61:'Hafif yağmur',63:'Yağmur',65:'Kuvvetli yağmur',66:'Dondurucu yağmur',67:'Dondurucu yağmur',71:'Hafif kar',73:'Kar',75:'Yoğun kar',77:'Kar taneleri',80:'Hafif sağanak',81:'Sağanak',82:'Şiddetli sağanak',85:'Kar sağanağı',86:'Yoğun kar sağanağı',95:'Gök gürültülü fırtına',96:'Dolu ile fırtına',99:'Dolu ile fırtına'};
+const WICON=c=>c==null?'❔':c===0?'☀️':c<=2?'🌤️':c===3?'☁️':c<=48?'🌫️':c<=67?'🌧️':c<=77?'🌨️':c<=82?'🌦️':c<=86?'🌨️':'⛈️';
+const confCls=p=>p>=0.75?'g':p>=0.5?'y':'r';
+const dirTxt=d=>d==null?'':['K','KD','D','GD','G','GB','B','KB'][Math.round(d/45)%8];
+
+/* ============ çizim ============ */
+function renderAll(){
+  renderNow();renderSummary();renderDays();renderHourly();renderDaily();renderVerification();renderConsistency();renderMyLog();renderServerLog();renderSources();renderMethod();
+  if(map)updateMap();
+}
+function renderNow(){
+  const c=D.main&&D.main.current;const d0=F.days[0];
+  let html='';
+  if(c){html=`<div class="now"><div class="ic">${c.is_day===0&&c.weather_code<=1?'🌙':WICON(c.weather_code)}</div>
+    <div><div class="loc">${esc(LOC.name)}</div><div class="mute" style="font-size:13px">${esc(LOC.sub||'')} · ${c.time.replace('T',' ')} yerel</div>
+    <div class="t">${fmt(c.temperature_2m)}°</div><div>${WMO[c.weather_code]||''} · Hissedilen ${fmt(c.apparent_temperature)}°</div></div></div>`}
+  else html=`<div class="loc">${esc(LOC.name)}</div><p class="mute">Anlık veri alınamadı.</p>`;
+  html+='<div class="chips">';
+  if(d0)html+=`<span class="chip">Bugün <b>${fmt(d0.tmax)}° / ${fmt(d0.tmin)}°</b></span><span class="chip">Yağış olasılığı <b>%${fmt(d0.pop*100)}</b></span>`;
+  if(c)html+=`<span class="chip">Rüzgâr <b>${fmt(c.wind_speed_10m)} km/sa ${dirTxt(c.wind_direction_10m)}</b> (hamle ${fmt(c.wind_gusts_10m)})</span><span class="chip">Nem <b>%${fmt(c.relative_humidity_2m)}</b></span><span class="chip">Basınç <b>${fmt(c.pressure_msl)} hPa</b></span>`;
+  if(D.main&&D.main.daily){const i=D.main.daily.time.indexOf(F.today);if(i>=0)html+=`<span class="chip">🌅 ${D.main.daily.sunrise[i].slice(11)} · 🌇 ${D.main.daily.sunset[i].slice(11)}</span><span class="chip">UV <b>${fmt(D.main.daily.uv_index_max[i],1)}</b></span>`}
+  const nm=Object.keys(D.fc).length,ne=Object.values(D.ens).reduce((s,e)=>s+e.temp.length,0);
+  html+=`<span class="chip">Kullanılan: <b>${nm} model + ${ne} ansambl üyesi</b></span></div>`;
+  $('#nowCard').innerHTML=html;
+}
+function renderSummary(){
+  const ds=F.days;if(!ds.length){$('#summary').innerHTML='<p class="mute">Tahmin üretilemedi.</p>';return}
+  const L=[];const nxt=F.hours.filter(h=>h.t>=F.now).slice(0,24);
+  if(nxt.length){const mx=Math.max(...nxt.map(h=>h.pop||0));const tmn=Math.min(...nxt.map(h=>h.temp)),tmx=Math.max(...nxt.map(h=>h.temp));
+    const rainH=nxt.find(h=>(h.pop||0)>=0.5);
+    L.push(`Önümüzdeki 24 saatte sıcaklık <b>${fmt(tmn)}° ile ${fmt(tmx)}°</b> arasında. `+(rainH?`Yağış en erken <b>${rainH.t.slice(11,16)}</b> civarı bekleniyor (olasılık %${fmt(rainH.pop*100)}).`:mx>=0.25?`Yağış ihtimali düşük-orta (en fazla %${fmt(mx*100)}).`:'Yağış beklenmiyor.'))}
+  const wk=ds.filter(d=>d.L>=1&&d.L<=7);
+  const rainy=wk.filter(d=>d.pop>=0.6).map(d=>dname(d.d,F.today));if(rainy.length)L.push(`Yağışlı görünen günler: <b>${rainy.join(', ')}</b>.`);
+  for(let i=1;i<Math.min(ds.length,8);i++){const df=ds[i].tmax-ds[i-1].tmax;if(Math.abs(df)>=4){L.push(`<b>${dname(ds[i].d,F.today)}</b> belirgin bir ${df<0?'soğuma':'ısınma'} var (en yüksek ${fmt(ds[i-1].tmax)}° → ${fmt(ds[i].tmax)}°).`);break}}
+  const windy=ds.filter(d=>d.L<=7&&d.gust>=50);if(windy.length)L.push(`Kuvvetli rüzgâr: ${windy.map(d=>`<b>${dname(d.d,F.today)}</b> (hamle ${fmt(d.gust)} km/sa)`).join(', ')}.`);
+  const frost=ds.filter(d=>d.L<=7&&d.tmin<=0);if(frost.length)L.push(`Don riski: ${frost.map(d=>dname(d.d,F.today)).join(', ')}.`);
+  const unc=ds.find(d=>d.conf<0.5);L.push(unc?`Tahmin güveni <b>${dname(unc.d,F.today)} (${dshort(unc.d)})</b> itibarıyla %50’nin altına iniyor; bu günleri eğilim olarak değerlendir.`:'Tüm günlerde güven %50’nin üzerinde — atmosfer şu an oldukça tahmin edilebilir.');
+  const big=ds.filter(d=>d.L>=1&&d.L<=5&&d.spread>=2.5);if(big.length)L.push(`Modeller ${big.map(d=>dname(d.d,F.today)).join(', ')} için anlaşamıyor (yayılım ≥2,5°C).`);
+  $('#summary').innerHTML=`<div class="summary"><ul>${L.map(x=>'<li>'+x+'</li>').join('')}</ul></div>`;
+}
+function dayIcon(d){return iconOf({cloud:d.cloud,psum:d.psum,pop:d.pop,temp:(d.tmax+d.tmin)/2,thunder:d.thunder,fog:d.fog})}
+function renderDays(){
+  $('#dayStrip').innerHTML=F.days.map(d=>{const[ic,tx]=dayIcon(d);return`<div class="day" title="${tx}" onclick="showTab('gunluk')"><div class="dn">${dname(d.d,F.today)}</div><div class="dd">${dshort(d.d)}</div><div class="i">${ic}</div><div><span class="mx">${fmt(d.tmax)}°</span> <span class="mn">${fmt(d.tmin)}°</span></div><div class="pp">💧 %${fmt(d.pop*100)}</div><span class="badge ${confCls(d.conf)}">%${fmt(d.conf*100)} güven</span></div>`}).join('');
+  const b1=V.blend[1];const sc=Math.round(consistencyScore()??NaN);
+  $('#ozetKpi').innerHTML=`
+   <div class="kpi"><div class="l">Yarın için ±2°C isabet (geçmiş ${V.days||'–'} gün)</div><div class="v">${b1&&b1.tmax?'%'+fmt(b1.tmax.hit*100):'–'}</div></div>
+   <div class="kpi"><div class="l">1 günlük ortalama hata (en yüksek sıcaklık)</div><div class="v">${b1&&b1.tmax?fmt(b1.tmax.mae,1)+'°C':'–'}</div></div>
+   <div class="kpi"><div class="l">Yağışlı/kuru gün doğru bilme (1 gün)</div><div class="v">${b1&&b1.pAcc!=null?'%'+fmt(b1.pAcc*100):'–'}</div></div>
+   <div class="kpi"><div class="l">Konum tutarlılık skoru</div><div class="v">${ok(sc)?sc+'/100':'–'}</div></div>`;
+}
+function killChart(k){if(charts[k]){charts[k].destroy();delete charts[k]}}
+let hiddenModels=new Set(load('wx_hidden',[]));
+function renderHourly(){
+  const start=F.hours.findIndex(h=>h.t>=F.now.slice(0,13));const hs=F.hours.slice(Math.max(start,0),Math.max(start,0)+hRangeH);
+  const lbl=hs.map(h=>{const hr=h.t.slice(11,13);return hRangeH<=48?(hr==='00'?dname(h.d,F.today)+' 00':hr):(hr==='00'?dname(h.d,F.today)+' '+dshort(h.d):hr+':00')});
+  $('#mLegend').innerHTML=MODELS.filter(m=>D.fc[m.id]).map(m=>`<label><input type="checkbox" data-m="${m.id}" ${hiddenModels.has(m.id)?'':'checked'}><i style="background:${m.col}"></i>${m.name}${weightOf(m.id,1).known?'':' *'}</label>`).join('');
+  $('#mLegend').querySelectorAll('input').forEach(cb=>cb.onchange=()=>{cb.checked?hiddenModels.delete(cb.dataset.m):hiddenModels.add(cb.dataset.m);store('wx_hidden',[...hiddenModels]);renderHourly()});
+  killChart('t');
+  const ds=[
+    {label:'Üst %80',data:hs.map(h=>h.temp+1.2816*h.sig),borderWidth:0,pointRadius:0,fill:false},
+    {label:'Alt %80',data:hs.map(h=>h.temp-1.2816*h.sig),borderWidth:0,pointRadius:0,fill:'-1',backgroundColor:'rgba(37,99,235,.13)'},
+    {label:'Konsensüs',data:hs.map(h=>h.temp),borderColor:'#1e3a8a',borderWidth:3,pointRadius:0,tension:.3}];
+  for(const m of MODELS){if(!D.fc[m.id]||hiddenModels.has(m.id))continue;ds.push({label:m.name,data:hs.map(h=>h.per[m.id]??null),borderColor:m.col,borderWidth:1,pointRadius:0,tension:.3,spanGaps:false})}
+  const common={responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{display:false},tooltip:{filter:i=>!i.dataset.label.includes('%80')}},scales:{x:{ticks:{maxTicksLimit:hRangeH<=48?12:10,autoSkip:true},grid:{display:false}}}};
+  charts.t=new Chart($('#cT'),{type:'line',data:{labels:lbl,datasets:ds},options:{...common,scales:{...common.scales,y:{title:{display:true,text:'°C'}}}}});
+  killChart('p');
+  charts.p=new Chart($('#cP'),{data:{labels:lbl,datasets:[
+    {type:'bar',label:'Yağış mm',data:hs.map(h=>+h.prec.toFixed(2)),backgroundColor:'#38bdf8',yAxisID:'y'},
+    {type:'line',label:'Olasılık %',data:hs.map(h=>h.pop==null?null:Math.round(h.pop*100)),borderColor:'#0369a1',borderWidth:2,pointRadius:0,yAxisID:'y1',tension:.3}]},
+    options:{...common,scales:{...common.scales,y:{beginAtZero:true,title:{display:true,text:'mm'}},y1:{position:'right',min:0,max:100,grid:{display:false},title:{display:true,text:'%'}}}}});
+  killChart('w');
+  charts.w=new Chart($('#cW'),{type:'line',data:{labels:lbl,datasets:[
+    {label:'Rüzgâr',data:hs.map(h=>h.wind),borderColor:'#0f766e',borderWidth:2,pointRadius:0,tension:.3},
+    {label:'Hamle',data:hs.map(h=>h.gust),borderColor:'#f59e0b',borderWidth:1.5,borderDash:[4,3],pointRadius:0,tension:.3}]},
+    options:{...common,scales:{...common.scales,y:{beginAtZero:true}}}});
+  const h48=F.hours.slice(Math.max(start,0),Math.max(start,0)+48);
+  $('#hTable').innerHTML='<tr><th>Saat</th><th></th><th>Sıcaklık</th><th>±</th><th>Yağış</th><th>Olas.</th><th>Rüzgâr</th><th>Hamle</th><th>Nem</th><th>Bulut</th><th>Model</th></tr>'+
+   h48.map(h=>{const hr=+h.t.slice(11,13);const[ic]=iconOf({cloud:h.cloud,prec:h.prec,temp:h.temp,thunder:h.thunder,fog:h.fog,night:hr<6||hr>=19});
+    return`<tr><td>${hr===0||h===h48[0]?'<b>'+dname(h.d,F.today)+'</b> ':''}${h.t.slice(11,16)}</td><td>${ic}</td><td><b>${fmt(h.temp,1)}°</b></td><td class="mute">${fmt(1.28*h.sig,1)}</td><td>${h.prec>=0.05?fmt(h.prec,1)+' mm':'–'}</td><td>%${fmt((h.pop||0)*100)}</td><td>${fmt(h.wind)} ${dirTxt(h.dir)}</td><td>${fmt(h.gust)}</td><td>%${fmt(h.rh)}</td><td>%${fmt(h.cloud)}</td><td class="mute">${h.n}</td></tr>`}).join('');
+}
+function renderDaily(){
+  const ds=F.days;killChart('d');
+  const lbl=ds.map(d=>dname(d.d,F.today)+' '+dshort(d.d));
+  charts.d=new Chart($('#cD'),{type:'line',data:{labels:lbl,datasets:[
+    {label:'max üst',data:ds.map(d=>d.tmax+1.28*d.sig),pointRadius:0,borderWidth:0,fill:false},
+    {label:'max alt',data:ds.map(d=>d.tmax-1.28*d.sig),pointRadius:0,borderWidth:0,fill:'-1',backgroundColor:'rgba(220,38,38,.12)'},
+    {label:'En yüksek',data:ds.map(d=>d.tmax),borderColor:'#dc2626',borderWidth:2.5,tension:.3,pointRadius:3},
+    {label:'min üst',data:ds.map(d=>d.tmin+1.28*d.sig),pointRadius:0,borderWidth:0,fill:false},
+    {label:'min alt',data:ds.map(d=>d.tmin-1.28*d.sig),pointRadius:0,borderWidth:0,fill:'-1',backgroundColor:'rgba(37,99,235,.12)'},
+    {label:'En düşük',data:ds.map(d=>d.tmin),borderColor:'#2563eb',borderWidth:2.5,tension:.3,pointRadius:3},
+    {label:'Normal max',data:ds.map(d=>d.clim&&d.clim.tmax),borderColor:'#dc2626',borderDash:[5,4],borderWidth:1,pointRadius:0},
+    {label:'Normal min',data:ds.map(d=>d.clim&&d.clim.tmin),borderColor:'#2563eb',borderDash:[5,4],borderWidth:1,pointRadius:0}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{filter:i=>!/üst|alt/.test(i.dataset.label)}},scales:{x:{grid:{display:false},ticks:{maxRotation:0,autoSkip:true}},y:{title:{display:true,text:'°C'}}}}});
+  $('#dTable').innerHTML='<tr><th>Gün</th><th></th><th>Max</th><th>Min</th><th>± (%80)</th><th>Yağış</th><th>Olas.</th><th>Rüzgâr/hamle</th><th>Güven</th><th>Uyum</th><th>Değişim</th><th>Normal</th></tr>'+
+    ds.map(d=>{const[ic,tx]=dayIcon(d);return`<tr><td><b>${dname(d.d,F.today)}</b> <span class="mute">${dshort(d.d)}</span></td><td title="${tx}">${ic}</td><td><b>${fmt(d.tmax)}°</b></td><td>${fmt(d.tmin)}°</td><td class="mute">${fmt(1.28*d.sig,1)}°</td><td>${d.psum>=0.1?fmt(d.psum,1)+' mm':'–'}</td><td>%${fmt(d.pop*100)}</td><td>${fmt(d.wind)}/${fmt(d.gust)}</td><td><span class="badge ${confCls(d.conf)}" style="margin:0">%${fmt(d.conf*100)}</span></td><td>${fmt(d.spread,1)}°</td><td>${d.change!=null?fmt(d.change,1)+'°':'–'}</td><td class="mute">${d.clim?fmt(d.clim.tmax)+'/'+fmt(d.clim.tmin):'–'}</td></tr>`}).join('');
+}
+function renderVerification(){
+  if(!V.ok){$('#verSub').textContent='Doğrulama verisi alınamadı (geçmiş çalıştırma arşivi veya ERA5). Tahmin eşit ağırlıklı konsensüsle üretildi.';$('#verKpi').innerHTML='';$('#mTable').innerHTML='';killChart('s');return}
+  $('#verSub').textContent=`Son ${V.days} günün (ERA5 gecikmesi nedeniyle ~3 gün öncesine kadar) gerçekleşen değerleriyle karşılaştırma. Konsensüs skorları aynı dönemde öğrenilen ağırlıklarla hesaplandığı için hafif iyimser olabilir.`;
+  const k=(L)=>V.blend[L]||{};
+  $('#verKpi').innerHTML=[1,3,5,7].map(L=>{const b=k(L);return`<div class="kpi"><div class="l">${L} gün önceden — en yüksek sıcaklık</div><div class="v">${b.tmax?'%'+fmt(b.tmax.hit*100):'–'}</div><div class="l">±2°C isabet · ort. hata ${b.tmax?fmt(b.tmax.mae,1)+'°':'–'} · yağış %${b.pAcc!=null?fmt(b.pAcc*100):'–'}</div></div>`}).join('');
+  $('#leadSel').innerHTML=[1,2,3,4,5,6,7].map(L=>`<button data-l="${L}" class="${L===leadView?'on':''}">${L}. gün</button>`).join('');
+  $('#leadSel').querySelectorAll('button').forEach(b=>b.onclick=()=>{leadView=+b.dataset.l;renderVerification()});
+  const L=leadView;const rows=MODELS.filter(m=>V.models[m.id]&&V.models[m.id][L]).map(m=>({m,r:V.models[m.id][L],w:weightOf(m.id,L).w}));
+  const sw=rows.reduce((s,x)=>s+x.w,0);rows.sort((a,b)=>b.w-a.w);
+  const b=V.blend[L];
+  $('#mTable').innerHTML='<tr><th>Model</th><th>Ağırlık</th><th></th><th>±2°C isabet</th><th>Ort. hata</th><th>RMSE</th><th>Sapma</th><th>Max sıc. hata</th><th>Rüzgâr hata</th><th>Yağış doğru</th><th>POD</th><th>FAR</th></tr>'+
+   (b?`<tr style="background:#eff6ff"><td><b>⭐ Konsensüs</b></td><td>–</td><td></td><td><b>%${fmt(b.t.hit*100)}</b></td><td><b>${fmt(b.t.mae,2)}°</b></td><td>${fmt(b.t.rmse,2)}</td><td>${fmt(b.t.bias,2)}</td><td>${b.tmax?fmt(b.tmax.mae,2)+'°':'–'}</td><td>–</td><td>${b.pAcc!=null?'%'+fmt(b.pAcc*100):'–'}</td><td>${b.pod!=null?fmt(b.pod,2):'–'}</td><td>${b.far!=null?fmt(b.far,2):'–'}</td></tr>`:'')+
+   rows.map(({m,r,w})=>`<tr><td><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${m.col}"></i> ${m.name}${m.id.includes('aifs')?' 🤖':''}</td><td>%${fmt(w/sw*100)}</td><td><div class="bar"><i style="width:${w/rows[0].w*100}%"></i></div></td><td>%${fmt(r.t.hit*100)}</td><td>${fmt(r.t.mae,2)}°</td><td>${fmt(r.t.rmse,2)}</td><td>${r.t.bias>0?'+':''}${fmt(r.t.bias,2)}</td><td>${r.tmax?fmt(r.tmax.mae,2)+'°':'–'}</td><td>${r.w?fmt(r.w.mae,1):'–'}</td><td>${r.pAcc!=null?'%'+fmt(r.pAcc*100):'–'}</td><td>${r.pod!=null?fmt(r.pod,2):'–'}</td><td>${r.far!=null?fmt(r.far,2):'–'}</td></tr>`).join('');
+  killChart('s');
+  const Ls=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15];
+  charts.s=new Chart($('#cS'),{type:'line',data:{labels:Ls.map(l=>l+'. gün'),datasets:[
+    {label:'MSESS (ölçülen 1–7, uzatılmış 8–15)',data:Ls.map(l=>+clamp(skillAt(l),-0.5,1).toFixed(2)),borderColor:'#2563eb',borderWidth:2,segment:{borderDash:c=>c.p0DataIndex>=6?[5,4]:undefined},pointRadius:2},
+    {label:'±2°C isabet olasılığı',data:Ls.map(l=>{const d=F.days.find(x=>x.L===l);return d?+d.conf.toFixed(2):null}),borderColor:'#16a34a',borderWidth:2,pointRadius:2}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},scales:{y:{min:-0.2,max:1}}}});
+  killChart('c');
+  const cd=F.days.filter(d=>d.change!=null);
+  charts.c=new Chart($('#cC'),{type:'bar',data:{labels:cd.map(d=>dname(d.d,F.today)),datasets:[
+    {label:'Dünden bugüne değişim (°C)',data:cd.map(d=>+d.change.toFixed(2)),backgroundColor:cd.map(d=>d.change<1?'#22c55e':d.change<2?'#f59e0b':'#ef4444')},
+    {type:'line',label:'Modeller arası yayılım (°C)',data:cd.map(d=>+d.spread.toFixed(2)),borderColor:'#6366f1',borderWidth:2,pointRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},scales:{y:{beginAtZero:true}}}});
+}
+/* ---- konum tutarlılığı ---- */
+let CONS=null;
+function computeConsistency(){
+  CONS=null;if(!D.clim||!CL)return;
+  const c=D.clim,t=c.time;const td=doyOf(F.today||new Date().toISOString().slice(0,10));
+  const inWin=i=>{let d=Math.abs(CL.doy[i]-td);d=Math.min(d,365-d);return d<=15};
+  const dl=[],an0=[],an1=[],anAll=[];let wet=0,n=0,wetAfterWet=0,wetPrev=0;
+  for(let i=1;i<t.length;i++){if(!inWin(i)||!inWin(i-1))continue;const a=c.temperature_2m_max[i],b=c.temperature_2m_max[i-1];if(!ok(a)||!ok(b))continue;
+    dl.push(Math.abs(a-b));const ca=CL.byDoy[Math.min(CL.doy[i],365)].tmax,cb=CL.byDoy[Math.min(CL.doy[i-1],365)].tmax;an0.push(b-cb);an1.push(a-ca);anAll.push(a-ca);
+    const p=c.precipitation_sum[i],pp=c.precipitation_sum[i-1];if(ok(p)&&ok(pp)){n++;if(p>=0.5)wet++;if(pp>=0.5){wetPrev++;if(p>=0.5)wetAfterWet++}}}
+  if(dl.length<30)return;
+  const m0=mean(an0),m1=mean(an1);let num=0,d0=0,d1=0;an0.forEach((x,i)=>{num+=(x-m0)*(an1[i]-m1);d0+=(x-m0)**2;d1+=(an1[i]-m1)**2});
+  CONS={dTmax:mean(dl),r1:num/Math.sqrt(d0*d1),sdAnom:sd(anAll),wetFreq:wet/n,wetPersist:wetPrev?wetAfterWet/wetPrev:null,n:dl.length};
+}
+function consistencyScore(){
+  if(!CONS)return null;const s3=V.ok?clamp(skillAt(3),0,1):0.6;
+  return 100*(0.35*clamp(CONS.r1,0,1)+0.35*(1-Math.min(1,CONS.dTmax/6))+0.30*s3);
+}
+function renderConsistency(){
+  if(!CONS){$('#consist').innerHTML='<p class="mute">İklim verisi alınamadı.</p>';return}
+  const sc=consistencyScore();const lbl=sc>=70?'Çok tutarlı':sc>=55?'Tutarlı':sc>=40?'Değişken':'Çok değişken';
+  const sk=[1,3,5,7].map(l=>V.ok&&V.blend[l]&&V.blend[l].msess!=null?fmt(V.blend[l].msess*100):'–');
+  $('#consist').innerHTML=`<div class="row"><div class="score">${fmt(sc)}<span style="font-size:18px" class="mute">/100</span></div><div><b>${lbl}</b><div class="note">Bu mevsimde (±15 gün, 2016–2025)</div></div></div>
+   <div class="grid" style="margin-top:12px">
+    <div class="kpi"><div class="l">Günden güne ort. değişim (max sıc.)</div><div class="v">${fmt(CONS.dTmax,1)}°C</div></div>
+    <div class="kpi"><div class="l">Kalıcılık (anomali otokorelasyonu, r₁)</div><div class="v">${fmt(CONS.r1,2)}</div></div>
+    <div class="kpi"><div class="l">Normalden sapma ölçeği (σ)</div><div class="v">${fmt(CONS.sdAnom,1)}°C</div></div>
+    <div class="kpi"><div class="l">Yağışlı gün sıklığı</div><div class="v">%${fmt(CONS.wetFreq*100)}</div></div>
+    <div class="kpi"><div class="l">Yağışlı günün ertesi de yağışlı</div><div class="v">${CONS.wetPersist!=null?'%'+fmt(CONS.wetPersist*100):'–'}</div></div>
+    <div class="kpi"><div class="l">Tahmin becerisi 1/3/5/7. gün (MSESS %)</div><div class="v" style="font-size:20px">${sk.join(' · ')}</div></div>
+   </div><p class="note">Skor = 35% × kalıcılık (r₁) + 35% × (1 − günlük değişim/6°C) + 30% × 3. gün tahmin becerisi. Yüksek skor: hava bu yerde istikrarlı ve tahmin edilebilir.</p>`;
+}
+/* ---- cihaz kayıtları ---- */
+function saveLog(){
+  if(!F.days.length)return;const k=LOC.lat.toFixed(2)+','+LOC.lon.toFixed(2);
+  const all=load('wx_log_v1',{});const arr=all[k]||[];
+  const rec={issued:F.today,days:F.days.map(d=>({d:d.d,x:+d.tmax.toFixed(1),n:+d.tmin.toFixed(1),p:+d.pop.toFixed(2)}))};
+  const i=arr.findIndex(r=>r.issued===F.today);if(i>=0)arr[i]=rec;else arr.push(rec);
+  all[k]=arr.slice(-45);store('wx_log_v1',all);
+}
+function renderMyLog(){
+  const k=LOC.lat.toFixed(2)+','+LOC.lon.toFixed(2);const arr=(load('wx_log_v1',{})[k])||[];
+  const obs={};if(D.main&&D.main.daily){D.main.daily.time.forEach((d,i)=>{if(d<F.today)obs[d]={x:D.main.daily.temperature_2m_max[i],p:D.main.daily.precipitation_sum[i]}})}
+  const byL={};
+  for(const r of arr)for(const d of r.days){const o=obs[d.d];if(!o||!ok(o.x))continue;const L=dayDiff(r.issued,d.d);if(L<1)continue;(byL[L]=byL[L]||{e:[],pc:0,pn:0});byL[L].e.push(d.x-o.x);if(ok(o.p)){byL[L].pn++;if((d.p>=0.5)===(o.p>=0.5))byL[L].pc++}}
+  const Ls=Object.keys(byL).map(Number).sort((a,b)=>a-b);
+  if(!Ls.length){$('#mylog').innerHTML=`<p class="mute">Henüz değerlendirilecek geçmiş yok. Bu konum için ${arr.length} gün kaydedildi; yarından itibaren kendi doğruluk karnen burada oluşacak.</p>`;return}
+  $('#mylog').innerHTML='<table><tr><th>Kaç gün önceden</th><th>Örnek</th><th>Ort. hata</th><th>±2°C isabet</th><th>Yağış doğru</th></tr>'+Ls.map(L=>{const s=byL[L];const st=stats(s.e)||{mae:mean(s.e.map(Math.abs)),hit:s.e.filter(e=>Math.abs(e)<=2).length/s.e.length};return`<tr><td>${L}. gün</td><td>${s.e.length}</td><td>${fmt(st.mae,1)}°</td><td>%${fmt(st.hit*100)}</td><td>${s.pn?'%'+fmt(s.pc/s.pn*100):'–'}</td></tr>`}).join('')+'</table><p class="note">Gerçekleşen değerler: Open-Meteo en iyi eşleşme analizi (son 10 gün). Veriler yalnızca bu tarayıcıda saklanır.</p>';
+}
+let SERVER=null;
+async function renderServerLog(){
+  const el=document.getElementById('srvlog');if(!el)return;
+  if(SERVER===null){try{const r=await fetch('data/verification.json',{cache:'no-store'});SERVER=r.ok?await r.json():false}catch(e){SERVER=false}}
+  if(!SERVER||!SERVER.cities){el.innerHTML='';return}
+  const dist=(a,b,c,d)=>{const R=6371,x=(c-a)*Math.PI/180,y=(d-b)*Math.PI/180;const h=Math.sin(x/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(y/2)**2;return 2*R*Math.asin(Math.sqrt(h))};
+  let best=null,bd=1e9;for(const c of Object.values(SERVER.cities)){const d=dist(LOC.lat,LOC.lon,c.lat,c.lon);if(d<bd){bd=d;best=c}}
+  if(!best||bd>60){el.innerHTML=`<p class="note">Sunucu her gün ${Object.keys(SERVER.cities).length} şehir için otomatik kayıt tutuyor; bu konuma yakın kayıtlı şehir yok.</p>`;return}
+  const rows=best.leads.filter(l=>l.n>0);
+  el.innerHTML=`<h3>Sunucu kayıtları — ${esc(best.name)} (her gün otomatik)</h3>`+(rows.length?'<table><tr><th>Kaç gün önceden</th><th>Örnek</th><th>Ort. hata</th><th>Sapma</th><th>±2°C isabet</th><th>Yağış doğru</th></tr>'+rows.map(l=>`<tr><td>${l.L}. gün</td><td>${l.n}</td><td>${fmt(l.mae,1)}°</td><td>${l.bias>0?'+':''}${fmt(l.bias,1)}°</td><td>%${fmt(l.hit*100)}</td><td>${l.wetAcc!=null?'%'+fmt(l.wetAcc*100):'–'}</td></tr>`).join('')+'</table>':`<p class="mute">${best.days} günlük kayıt var; karşılaştırma ilk günlerden sonra oluşacak.</p>`)+`<p class="note">Son güncelleme: ${SERVER.updated?new Date(SERVER.updated).toLocaleString('tr-TR'):'–'} · Kaynak: ${esc(SERVER.source||'')}</p>`;
+}
+function renderSources(){
+  $('#srcList').innerHTML=Object.values(SRC).map(s=>`<div class="src"><span class="pill ${s.status}">${s.status==='ok'?'✓ aktif':s.status==='hata'?'✗ yok':'…'}</span><div><b>${esc(s.name)}</b> <a href="${s.url}" target="_blank" rel="noopener" class="note">kaynak</a><div class="note">${esc(s.desc)}${s.info?' — <i>'+esc(s.info)+'</i>':''}</div></div></div>`).join('');
+}
+function renderMethod(){
+  $('#method').innerHTML=`<h2>Yöntem — tahmin nasıl üretiliyor?</h2>
+  <p><b>1. Çoklu model toplama.</b> Dünyanın 9 büyük hava tahmin merkezinin küresel modelleri saatlik olarak alınır. Bunlardan <b>ECMWF AIFS</b> doğrudan bir yapay zekâ (derin öğrenme) modelidir; diğerleri fizik denklemlerini çözen sayısal modellerdir. Bu modeller de uydu, radar, radyosonde, uçak, şamandıra ve yer istasyonu gözlemleriyle başlatılır (veri asimilasyonu).</p>
+  <p><b>2. Konuma özel öğrenme (MOS benzeri istatistiksel son işleme).</b> Her modelin son ~5 haftada 1–7 gün önceden yaptığı tahminler, ERA5 yeniden analizine karşı karşılaştırılır. Her model ve her öngörü günü için <code>sapma</code> (sistematik hata) ve <code>RMSE</code> öğrenilir. Tahminde sapma çıkarılır ve modeller <code>ağırlık = 1/RMSE²</code> ile birleştirilir (ters hata varyansı ağırlıklandırma — bağımsız tahminleri birleştirmenin en küçük hata veren doğrusal yolu).</p>
+  <p><b>3. Belirsizlik.</b> 120’ye yakın ansambl üyesi (ECMWF ENS, NOAA GEFS, ICON-EPS) ve modeller arası yayılım ile ölçülmüş geçmiş hata birleştirilir: <code>σ = max(ölçülmüş RMSE, model yayılımı, ansambl std)</code>. Güven yüzdesi, hataların normal dağıldığı varsayımıyla <code>P(|hata| ≤ 2°C) = erf(2 / σ√2)</code> olarak hesaplanır. Saatlik grafikteki gölge %80 aralığıdır (±1,28σ).</p>
+  <p><b>4. Yağış olasılığı.</b> Ansambl üyelerinin ve ağırlıklı modellerin ≥0,5 mm yağış veren oranı (%65 ansambl, %35 deterministik). Uzun vadede, ölçülen beceri oranında 10 yıllık yağışlı gün sıklığına doğru kalibre edilir.</p>
+  <p><b>5. 8–16. günler.</b> Atmosferin kaotik doğası nedeniyle beceri hızla düşer. 1–7. gün beceri eğrisi (MSESS) uzatılır ve tahmin, kalan beceri oranında mevsim normaline doğru sönümlenir: <code>T = normal + β·(model − normal)</code>. Bu, aşırı güvenli uzun vade tahminlerini önler.</p>
+  <p><b>6. Tutarlılık.</b> (a) Model çalıştırmaları arası kararlılık: bugünkü ve dünkü çalıştırmanın aynı gün için verdiği değer farkı. (b) Modeller arası uyum: yayılım. (c) Konum iklimi: 10 yılda günden güne değişim, anomali kalıcılığı (r₁), yağış kalıcılığı. Hepsi her açılışta güncel verilerle yeniden hesaplanır.</p>
+  <p><b>Dürüst not:</b> Hiçbir yöntem 2 hafta için “çok yüksek doğruluk” veremez; 1–3 gün için sıcaklıkta tipik hata 1–2°C’dir, 10. günden sonra tahmin eğilim niteliğindedir. Bu site doğruluğu abartmak yerine <i>ölçer ve gösterir</i>. ERA5 ~31 km çözünürlüklüdür; dağlık ve kıyı noktalarında yerel istasyondan farklı olabilir.</p>
+  <p class="note">Veri: Open-Meteo (CC BY 4.0), ECMWF, NOAA, DWD, CMC, JMA, Météo-France, UKMO, CMA, Copernicus ERA5, NASA GIBS, RainViewer, OpenStreetMap, Esri.</p>`;
+}
+
+/* ============ harita ============ */
+let map=null,satLayers={},radarLayer=null,radarFrames=[],radarHost='',radarIdx=0,radarTimer=null,marker=null,ctrl=null;
+function gibs(layer,date){return L.tileLayer(`https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${layer}/default/${date}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg`,{maxNativeZoom:9,maxZoom:12,attribution:'NASA GIBS'})}
+function initMap(){
+  if(map)return;
+  map=L.map('map',{zoomControl:true}).setView([LOC.lat,LOC.lon],7);
+  const osm=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'});
+  const esri=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,attribution:'Esri World Imagery'});
+  osm.addTo(map);
+  const y=addDays(new Date().toISOString().slice(0,10),-1);$('#satDate').value=y;$('#satDate').max=new Date().toISOString().slice(0,10);
+  buildSat(y);
+  ctrl=L.control.layers({'Harita (OSM)':osm,'Yüksek çözünürlüklü uydu fotoğrafı (Esri)':esri},{},{collapsed:false}).addTo(map);
+  addSatToCtrl();
+  satLayers['VIIRS NOAA-20 (bulut, gerçek renk)'].addTo(map);
+  setSrc('gibs',true,'Tarih '+y);
+  getJSON('https://api.rainviewer.com/public/weather-maps.json').then(j=>{radarHost=j.host;radarFrames=j.radar.past;radarIdx=radarFrames.length-1;showRadar();setSrc('radar',true,radarFrames.length+' kare');renderSources()}).catch(e=>{setSrc('radar',false,e.message);renderSources()});
+  $('#satDate').onchange=()=>{const v=$('#satDate').value;if(!v)return;for(const k in satLayers){const on=map.hasLayer(satLayers[k]);map.removeLayer(satLayers[k]);ctrl.removeLayer(satLayers[k]);satLayers[k]._on=on}const prev={...satLayers};buildSat(v);for(const k in satLayers)if(prev[k]._on)satLayers[k].addTo(map);addSatToCtrl()};
+  $('#radarPlay').onclick=()=>{if(radarTimer){clearInterval(radarTimer);radarTimer=null;$('#radarPlay').textContent='▶ Radarı oynat';return}$('#radarPlay').textContent='⏸ Durdur';radarTimer=setInterval(()=>{radarIdx=(radarIdx+1)%radarFrames.length;showRadar()},700)};
+  updateMap();
+}
+function buildSat(date){satLayers={'VIIRS NOAA-20 (bulut, gerçek renk)':gibs('VIIRS_NOAA20_CorrectedReflectance_TrueColor',date),'VIIRS Suomi-NPP (gerçek renk)':gibs('VIIRS_SNPP_CorrectedReflectance_TrueColor',date),'MODIS Terra (gerçek renk)':gibs('MODIS_Terra_CorrectedReflectance_TrueColor',date)};for(const k in satLayers)satLayers[k].setOpacity(0.85)}
+function addSatToCtrl(){for(const k in satLayers)ctrl.addOverlay(satLayers[k],k)}
+function showRadar(){
+  if(!radarFrames.length)return;const f=radarFrames[radarIdx];
+  const nl=L.tileLayer(`${radarHost}${f.path}/256/{z}/{x}/{y}/2/1_1.png`,{opacity:.75,maxNativeZoom:7,maxZoom:12,attribution:'RainViewer'});
+  const wasOn=!radarLayer||map.hasLayer(radarLayer);
+  if(radarLayer){ctrl.removeLayer(radarLayer);map.removeLayer(radarLayer)}
+  radarLayer=nl;ctrl.addOverlay(radarLayer,'Yağış radarı (RainViewer)');if(wasOn)radarLayer.addTo(map);
+  const dt=new Date(f.time*1000);$('#radarTime').textContent='Radar: '+dt.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+}
+function updateMap(){if(!map)return;map.setView([LOC.lat,LOC.lon],map.getZoom());if(marker)marker.remove();marker=L.marker([LOC.lat,LOC.lon]).addTo(map).bindPopup(esc(LOC.name));}
+
+/* ============ akış ============ */
+async function go(loc){
+  LOC=loc;store('wx_loc',loc);$('#loading').style.display='flex';status('Bağlanılıyor…');
+  initSources();D={fc:{},prev:{},ens:{}};V={};F={};
+  if(loc.geoOk!==undefined)setSrc('geo',loc.geoOk,'');else setSrc('geo',true,'');
+  await fetchAll(loc.lat,loc.lon);
+  status('Doğrulama ve öğrenme…');
+  try{buildClim();runVerification();buildForecast();computeConsistency();saveLog();renderAll()}
+  catch(e){console.error(e);$('#nowCard').innerHTML='<b>Hata:</b> '+esc(e.message)}
+  if(!Object.keys(D.fc).length)$('#nowCard').innerHTML+='<p style="color:#dc2626">Model verisi alınamadı. İnternet bağlantını kontrol edip tekrar dene.</p>';
+  $('#loading').style.display='none';
+}
+function showTab(v){document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));
+  if(v==='harita'){initMap();setTimeout(()=>map.invalidateSize(),60)}
+  if(v==='harita'&&SRC.gibs)renderSources();
+  Object.values(charts).forEach(c=>c.resize());}
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>showTab(b.dataset.v));
+document.querySelectorAll('#hRange button').forEach(b=>b.onclick=()=>{hRangeH=+b.dataset.h;document.querySelectorAll('#hRange button').forEach(x=>x.classList.toggle('on',x===b));renderHourly()});
+
+let qT=null;
+$('#q').addEventListener('input',e=>{clearTimeout(qT);const v=e.target.value.trim();if(v.length<2){$('#results').style.display='none';return}
+  qT=setTimeout(async()=>{try{const j=await getJSON(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(v)}&count=7&language=tr&format=json`);
+    const r=j.results||[];$('#results').innerHTML=r.length?r.map((x,i)=>`<div data-i="${i}">${esc(x.name)} <small>${esc([x.admin2,x.admin1,x.country].filter(Boolean).join(', '))}</small></div>`).join(''):'<div class="mute">Sonuç yok</div>';
+    $('#results').style.display='block';
+    $('#results').querySelectorAll('[data-i]').forEach(el=>el.onclick=()=>{const x=r[+el.dataset.i];$('#results').style.display='none';$('#q').value='';go({lat:x.latitude,lon:x.longitude,name:x.name,sub:[x.admin1,x.country].filter(Boolean).join(', ')})});
+  }catch(err){$('#results').innerHTML='<div class="mute">Arama başarısız: '+esc(err.message)+'</div>';$('#results').style.display='block'}},300)});
+document.addEventListener('click',e=>{if(!e.target.closest('.search'))$('#results').style.display='none'});
+$('#gps').onclick=()=>{
+  if(!navigator.geolocation){alertBox('Tarayıcın konum desteklemiyor.');return}
+  $('#gps').textContent='⏳';
+  navigator.geolocation.getCurrentPosition(async p=>{const lat=+p.coords.latitude.toFixed(4),lon=+p.coords.longitude.toFixed(4);let name='Konumum',sub=`${lat}, ${lon}`;
+    try{const j=await getJSON(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=tr`);name=j.locality||j.city||name;sub=[j.principalSubdivision,j.countryName].filter(Boolean).join(', ')}catch(e){}
+    $('#gps').textContent='📍 Konumum';go({lat,lon,name,sub})},
+   err=>{$('#gps').textContent='📍 Konumum';alertBox('Konum alınamadı ('+err.message+'). Şehir adını arayabilirsin.')},{enableHighAccuracy:true,timeout:12000});
+};
+function alertBox(m){$('#results').innerHTML='<div class="mute">'+esc(m)+'</div>';$('#results').style.display='block'}
+window.showTab=showTab;
+go(load('wx_loc',null)||{lat:41.0082,lon:28.9784,name:'İstanbul',sub:'Türkiye'});
+</script>
+</body>
+</html>
