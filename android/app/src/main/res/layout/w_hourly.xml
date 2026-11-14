@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/root" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="10dp" android:background="@drawable/bg">
+    <include layout="@layout/inc_header" />
+    <LinearLayout android:id="@+id/secH" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="6dp" android:orientation="horizontal">
+        <LinearLayout android:id="@+id/hs0" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+            <TextView android:id="@+id/ht0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--" android:textColor="#DDE7FF" android:textSize="11sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/hi0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#FFFFFF" android:textSize="18sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/hv0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/hp0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#BFDBFE" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/hs1" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+            <TextView android:id="@+id/ht1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--" android:textColor="#DDE7FF" android:textSize="11sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/hi1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#FFFFFF" android:textSize="18sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/hv1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/hp1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#BFDBFE" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/hs2" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+            <TextView android:id="@+id/ht2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--" android:textColor="#DDE7FF" android:textSize="11sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/hi2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#FFFFFF" android:textSize="18sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/hv2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/hp2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#BFDBFE" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/hs3" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+            <TextView android:id="@+id/ht3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--" android:textColor="#DDE7FF" android:textSize="11sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/hi3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#FFFFFF" android:textSize="18sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/hv3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/hp3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#BFDBFE" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/hs4" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+            <TextView android:id="@+id/ht4" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--" android:textColor="#DDE7FF" android:textSize="11sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/hi4" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#FFFFFF" android:textSize="18sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/hv4" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/hp4" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#BFDBFE" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/hs5" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+            <TextView android:id="@+id/ht5" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--" android:textColor="#DDE7FF" android:textSize="11sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/hi5" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#FFFFFF" android:textSize="18sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/hv5" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/hp5" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#BFDBFE" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/hs6" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+            <TextView android:id="@+id/ht6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--" android:textColor="#DDE7FF" android:textSize="11sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/hi6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#FFFFFF" android:textSize="18sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/hv6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/hp6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#BFDBFE" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/hs7" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+            <TextView android:id="@+id/ht7" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--" android:textColor="#DDE7FF" android:textSize="11sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/hi7" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#FFFFFF" android:textSize="18sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/hv7" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/hp7" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#BFDBFE" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

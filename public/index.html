@@ -183,7 +183,7 @@ a{color:var(--acc)}
   header{padding:calc(10px + env(safe-area-inset-top)) 12px 62px}
   .brand{font-size:17px}.brand small{display:none}
   .search{margin-top:10px}.search input{padding:11px 12px}
-  .search button{font-size:0;padding:0 13px}.search button::before{content:'📍';font-size:18px}
+  .search button{font-size:0;padding:0 13px}#gps::before{content:'📍';font-size:18px}#appw::before{content:'⚙';font-size:18px}
   main{padding:0 10px 20px;margin-top:-52px}
   .card{padding:13px;border-radius:14px;margin-bottom:10px}
   .now{grid-template-columns:auto 1fr;gap:4px 12px}
@@ -222,6 +222,7 @@ a{color:var(--acc)}
   <div class="search">
     <input id="q" placeholder="Şehir veya ilçe ara (ör. Kadıköy, Ankara)" autocomplete="off">
     <button id="gps">📍 Konumum</button>
+    <button id="appw" style="display:none" title="Widget ayarları">⚙ Widget</button>
     <div id="results"></div>
   </div>
   <div class="recent" id="recent"></div>
@@ -786,7 +787,7 @@ function renderRain(){
 function renderRecent(){
   const r=load('wx_recent',[]);const k=l=>(+l.lat).toFixed(2)+','+(+l.lon).toFixed(2);
   $('#recent').innerHTML=r.map((l,i)=>`<button data-i="${i}" class="${LOC&&k(l)===k(LOC)?'on':''}">${esc(l.name)}</button>`).join('');
-  $('#recent').querySelectorAll('button').forEach(b=>b.onclick=()=>go(r[+b.dataset.i]));
+  $('#recent').querySelectorAll('button').forEach(b=>b.onclick=()=>go(r[+b.dataset.i],'pick'));
 }
 function pushRecent(loc){const k=l=>(+l.lat).toFixed(2)+','+(+l.lon).toFixed(2);let r=load('wx_recent',[]).filter(l=>k(l)!==k(loc));r.unshift({lat:loc.lat,lon:loc.lon,name:loc.name,sub:loc.sub});store('wx_recent',r.slice(0,6))}
 function killChart(k){if(charts[k]){charts[k].destroy();delete charts[k]}}
@@ -970,7 +971,8 @@ function showRadar(){
 function updateMap(){if(!map)return;map.setView([LOC.lat,LOC.lon],map.getZoom());if(marker)marker.remove();marker=L.marker([LOC.lat,LOC.lon]).addTo(map).bindPopup(esc(LOC.name));}
 
 /* ============ akış ============ */
-async function go(loc){
+async function go(loc,how){
+  if(how&&window.HavaApp){try{window.HavaApp.onLocation(+loc.lat,+loc.lon,String(loc.name||''),how==='gps')}catch(e){}}
   LOC=loc;store('wx_loc',loc);pushRecent(loc);renderRecent();closeDay();$('#loading').style.display='flex';status('Bağlanılıyor…');
   initSources();D={fc:{},prev:{},ens:{}};V={};F={};
   if(loc.geoOk!==undefined)setSrc('geo',loc.geoOk,'');else setSrc('geo',true,'');
@@ -993,7 +995,7 @@ $('#q').addEventListener('input',e=>{clearTimeout(qT);const v=e.target.value.tri
   qT=setTimeout(async()=>{try{const j=await getJSON(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(v)}&count=7&language=tr&format=json`);
     const r=j.results||[];$('#results').innerHTML=r.length?r.map((x,i)=>`<div data-i="${i}">${esc(x.name)} <small>${esc([x.admin2,x.admin1,x.country].filter(Boolean).join(', '))}</small></div>`).join(''):'<div class="mute">Sonuç yok</div>';
     $('#results').style.display='block';
-    $('#results').querySelectorAll('[data-i]').forEach(el=>el.onclick=()=>{const x=r[+el.dataset.i];$('#results').style.display='none';$('#q').value='';go({lat:x.latitude,lon:x.longitude,name:x.name,sub:[x.admin1,x.country].filter(Boolean).join(', ')})});
+    $('#results').querySelectorAll('[data-i]').forEach(el=>el.onclick=()=>{const x=r[+el.dataset.i];$('#results').style.display='none';$('#q').value='';go({lat:x.latitude,lon:x.longitude,name:x.name,sub:[x.admin1,x.country].filter(Boolean).join(', ')},'pick')});
   }catch(err){$('#results').innerHTML='<div class="mute">Arama başarısız: '+esc(err.message)+'</div>';$('#results').style.display='block'}},300)});
 document.addEventListener('click',e=>{if(!e.target.closest('.search'))$('#results').style.display='none'});
 $('#gps').onclick=()=>{
@@ -1001,11 +1003,12 @@ $('#gps').onclick=()=>{
   $('#gps').textContent='⏳';
   navigator.geolocation.getCurrentPosition(async p=>{const lat=+p.coords.latitude.toFixed(4),lon=+p.coords.longitude.toFixed(4);let name='Konumum',sub=`${lat}, ${lon}`;
     try{const j=await getJSON(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=tr`);name=j.locality||j.city||name;sub=[j.principalSubdivision,j.countryName].filter(Boolean).join(', ')}catch(e){}
-    $('#gps').textContent='📍 Konumum';go({lat,lon,name,sub})},
+    $('#gps').textContent='📍 Konumum';go({lat,lon,name,sub},'gps')},
    err=>{$('#gps').textContent='📍 Konumum';alertBox('Konum alınamadı ('+err.message+'). Şehir adını arayabilirsin.')},{enableHighAccuracy:true,timeout:12000});
 };
 function alertBox(m){$('#results').innerHTML='<div class="mute">'+esc(m)+'</div>';$('#results').style.display='block'}
 window.showTab=showTab;
+if(window.HavaApp){const b=$('#appw');b.style.display='';b.onclick=()=>{try{window.HavaApp.openSettings()}catch(e){}}}
 const TABS=['ozet','yagmur','saatlik','gunluk','dogruluk','harita','kaynak'];
 function fromHash(){const h=location.hash.slice(1);if(TABS.includes(h))showTab(h)}
 window.addEventListener('hashchange',fromHash);

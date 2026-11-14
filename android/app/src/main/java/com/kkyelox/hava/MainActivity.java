@@ -1,192 +1,140 @@
 package com.kkyelox.hava;
 
-import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
-import android.location.Location;
-import android.location.LocationManager;
+import android.graphics.Color;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.view.inputmethod.EditorInfo;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.LinearLayout;
-import android.widget.TextView;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
+import android.webkit.GeolocationPermissions;
+import android.webkit.JavascriptInterface;
+import android.webkit.WebChromeClient;
+import android.webkit.WebResourceError;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
 import java.net.URLEncoder;
 import java.util.Locale;
 
+/** Uygulama = site. Konum ve widget ayarları köprüyle bağlı. */
 public class MainActivity extends Activity {
-    SharedPreferences sp;
-    TextView current, msg;
-    LinearLayout results;
-    final Handler ui = new Handler(Looper.getMainLooper());
+    static final String SITE = "https://kkyelox.github.io/konsensus-hava/";
+    static final String HOST = "kkyelox.github.io";
+    WebView web;
+    GeolocationPermissions.Callback geoCb;
+    String geoOrigin;
 
     @Override
     protected void onCreate(Bundle b) {
         super.onCreate(b);
-        setContentView(R.layout.activity_main);
-        sp = getSharedPreferences("hava", MODE_PRIVATE);
-        current = findViewById(R.id.current);
-        msg = findViewById(R.id.msg);
-        results = findViewById(R.id.results);
-        showCurrent();
-        EditText q = findViewById(R.id.query);
-        findViewById(R.id.search).setOnClickListener(v -> search(q.getText().toString()));
-        q.setOnEditorActionListener((v, id, e) -> {
-            if (id == EditorInfo.IME_ACTION_SEARCH) { search(q.getText().toString()); return true; }
-            return false;
+        getWindow().setStatusBarColor(Color.parseColor("#1E3A8A"));
+        web = new WebView(this);
+        web.setBackgroundColor(Color.parseColor("#EEF3F9"));
+        setContentView(web);
+        WebSettings s = web.getSettings();
+        s.setJavaScriptEnabled(true);
+        s.setDomStorageEnabled(true);
+        s.setGeolocationEnabled(true);
+        s.setUserAgentString(s.getUserAgentString() + " KonsensusHavaApp/1");
+        web.setWebViewClient(new WebViewClient() {
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest req) {
+                Uri u = req.getUrl();
+                if (HOST.equals(u.getHost())) return false;
+                try { startActivity(new Intent(Intent.ACTION_VIEW, u)); } catch (Exception ignored) { }
+                return true;
+            }
+
+            @Override
+            public void onReceivedError(WebView v, WebResourceRequest req, WebResourceError err) {
+                if (req.isForMainFrame()) {
+                    v.loadDataWithBaseURL(null, "<html><body style='font-family:sans-serif;padding:30px;background:#EEF3F9'>"
+                            + "<h2>İnternet bağlantısı yok</h2><p>Site yüklenemedi. Widget'lar son alınan veriyi göstermeye devam eder.</p>"
+                            + "<p><a href='" + SITE + "' style='font-size:18px'>↻ Tekrar dene</a></p></body></html>", "text/html", "UTF-8", null);
+                }
+            }
         });
-        findViewById(R.id.gps).setOnClickListener(v -> useGps());
-        findViewById(R.id.open).setOnClickListener(v ->
-                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(RainWidget.SITE))));
+        web.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback cb) {
+                if (Loc.hasPermission(MainActivity.this)) { cb.invoke(origin, true, false); return; }
+                geoCb = cb; geoOrigin = origin;
+                Gps.ask(MainActivity.this);
+            }
+        });
+        web.addJavascriptInterface(new Bridge(getApplicationContext()), "HavaApp");
+        web.loadUrl(url(getIntent()));
+    }
+
+    @Override
+    protected void onNewIntent(Intent i) {
+        super.onNewIntent(i);
+        setIntent(i);
+        web.loadUrl(url(i));
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (sp.contains("lat")) refreshNow();
+        // Otomatik konumdaysa konumu tazele ve widget'ları güncelle
+        if (Loc.hasPermission(this)) Gps.freshAndSave(this, null);
+        else { final Context app = getApplicationContext(); new Thread(() -> Updater.updateAll(app, false)).start(); }
     }
 
-    /** Uygulama ön plandayken veriyi çeker, widget'a yazar ve sonucu/hatayı gösterir. */
-    void refreshNow() {
-        msg.setText("Veri alınıyor…");
-        final Context app = getApplicationContext();
-        final double la = Double.longBitsToDouble(sp.getLong("lat", 0)), lo = Double.longBitsToDouble(sp.getLong("lon", 0));
-        new Thread(() -> {
-            String out;
-            try {
-                Forecast.Result r = Forecast.fetch(la, lo);
-                RainWidget.render(app, r);
-                StringBuilder b = new StringBuilder("✓ Widget güncellendi. Şu an " + (Double.isNaN(r.temp) ? "--" : Math.round(r.temp)) + "°\n");
-                for (int d = 0; d < 3; d++) {
-                    Forecast.Day day = r.days[d];
-                    b.append(RainWidget.dayName(day.date, d)).append(": ")
-                     .append(day.pop < 0 ? "--" : "%" + Math.round(day.pop * 100)).append(" ")
-                     .append(Forecast.label(Forecast.level(day.pop)))
-                     .append(day.window.isEmpty() ? "" : " (" + day.window + ")").append('\n');
-                }
-                if (r.errors.length() > 0) b.append("Not: ").append(r.errors);
-                out = b.toString();
-            } catch (Throwable e) {
-                out = "⚠ Veri alınamadı: " + e.getClass().getSimpleName() + " — " + e.getMessage()
-                        + "\nİnternet açık mı? Pil tasarrufu / veri tasarrufu bu uygulamayı engelliyor olabilir.";
-            }
-            final String o = out;
-            ui.post(() -> msg.setText(o));
-        }).start();
-    }
-
-    void showCurrent() {
-        current.setText(sp.contains("lat") ? "Seçili konum: " + sp.getString("name", "") : "Seçili konum: yok");
-    }
-
-    void save(double lat, double lon, String name) {
-        sp.edit().putLong("lat", Double.doubleToRawLongBits(lat)).putLong("lon", Double.doubleToRawLongBits(lon))
-                .putString("name", name).apply();
-        showCurrent();
-        refreshNow();
-    }
-
-    void search(String text) {
-        String t = text.trim();
-        if (t.length() < 2) return;
-        msg.setText("Aranıyor…");
-        results.removeAllViews();
-        new Thread(() -> {
-            try {
-                JSONObject j = new JSONObject(Forecast.get("https://geocoding-api.open-meteo.com/v1/search?count=6&language=tr&format=json&name="
-                        + URLEncoder.encode(t, "UTF-8")));
-                JSONArray r = j.optJSONArray("results");
-                ui.post(() -> {
-                    msg.setText(r == null || r.length() == 0 ? "Sonuç yok" : "");
-                    if (r == null) return;
-                    for (int i = 0; i < r.length(); i++) {
-                        JSONObject x = r.optJSONObject(i);
-                        String name = x.optString("name");
-                        String sub = x.optString("admin1", "") + (x.has("country") ? ", " + x.optString("country") : "");
-                        Button bt = new Button(this);
-                        bt.setAllCaps(false);
-                        bt.setText(name + " — " + sub);
-                        final double la = x.optDouble("latitude"), lo = x.optDouble("longitude");
-                        bt.setOnClickListener(v -> { results.removeAllViews(); save(la, lo, name); });
-                        results.addView(bt);
-                    }
-                });
-            } catch (Exception e) {
-                ui.post(() -> msg.setText("Arama başarısız: internet bağlantısını kontrol et."));
-            }
-        }).start();
-    }
-
-    void useGps() {
-        if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 7);
-            return;
+    String url(Intent i) {
+        String tab = i.getStringExtra("tab");
+        double lat = i.getDoubleExtra("lat", Double.NaN), lon = i.getDoubleExtra("lon", Double.NaN);
+        String name = i.getStringExtra("name");
+        if (Double.isNaN(lat)) {
+            Loc g = Loc.global(getApplicationContext(), false);
+            if (g != null) { lat = g.lat; lon = g.lon; name = g.name; }
         }
-        msg.setText("Konum alınıyor…");
-        LocationManager lm = (LocationManager) getSystemService(LOCATION_SERVICE);
-        Location best = null;
-        try {
-            for (String p : lm.getProviders(true)) {
-                Location l = lm.getLastKnownLocation(p);
-                if (l != null && (best == null || l.getTime() > best.getTime())) best = l;
-            }
-        } catch (SecurityException ignored) { }
-        if (best != null && System.currentTimeMillis() - best.getTime() < 6 * 3600_000L) {
-            gotLocation(best);
-            return;
+        StringBuilder u = new StringBuilder(SITE).append("?app=1");
+        if (!Double.isNaN(lat)) {
+            u.append(String.format(Locale.US, "&lat=%.4f&lon=%.4f", lat, lon));
+            try { u.append("&name=").append(URLEncoder.encode(name == null ? "" : name, "UTF-8")); } catch (Exception ignored) { }
         }
-        try {
-            String prov = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) ? LocationManager.NETWORK_PROVIDER : LocationManager.GPS_PROVIDER;
-            if (Build.VERSION.SDK_INT >= 30) {
-                lm.getCurrentLocation(prov, null, getMainExecutor(), l -> {
-                    if (l != null) gotLocation(l); else msg.setText("Konum alınamadı. Konum servisini aç ya da şehir ara.");
-                });
-            } else {
-                final Location fallback = best;
-                lm.requestSingleUpdate(prov, new android.location.LocationListener() {
-                    @Override public void onLocationChanged(Location l) { gotLocation(l); }
-                    @Override public void onStatusChanged(String s, int i, Bundle b) { }
-                    @Override public void onProviderEnabled(String s) { }
-                    @Override public void onProviderDisabled(String s) { if (fallback != null) gotLocation(fallback); }
-                }, Looper.getMainLooper());
-            }
-        } catch (Exception e) {
-            if (best != null) gotLocation(best);
-            else msg.setText("Konum alınamadı. Konum servisini aç ya da şehir ara.");
-        }
-    }
-
-    void gotLocation(Location l) {
-        final double la = l.getLatitude(), lo = l.getLongitude();
-        msg.setText("Konum bulundu, yer adı alınıyor…");
-        new Thread(() -> {
-            String name = String.format(Locale.US, "%.3f, %.3f", la, lo);
-            try {
-                JSONObject j = new JSONObject(Forecast.get(String.format(Locale.US,
-                        "https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=%.4f&longitude=%.4f&localityLanguage=tr", la, lo)));
-                String loc = j.optString("locality", "");
-                if (loc.isEmpty()) loc = j.optString("city", "");
-                if (!loc.isEmpty()) name = loc;
-            } catch (Exception ignored) { }
-            final String n = name;
-            ui.post(() -> save(la, lo, n));
-        }).start();
+        if (tab != null && !tab.isEmpty()) u.append('#').append(tab);
+        return u.toString();
     }
 
     @Override
-    public void onRequestPermissionsResult(int code, String[] perms, int[] res) {
-        if (code == 7 && res.length > 0 && res[0] == PackageManager.PERMISSION_GRANTED) useGps();
-        else if (code == 7) msg.setText("Konum izni verilmedi — şehir arayabilirsin.");
+    public void onBackPressed() {
+        if (web != null && web.canGoBack()) web.goBack();
+        else super.onBackPressed();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int code, String[] p, int[] r) {
+        boolean ok = Loc.hasPermission(this);
+        if (geoCb != null) { geoCb.invoke(geoOrigin, ok, false); geoCb = null; }
+        if (ok) Gps.freshAndSave(this, null);
+    }
+
+    /** Siteden çağrılır: window.HavaApp */
+    class Bridge {
+        final Context app;
+        Bridge(Context c) { app = c; }
+
+        @JavascriptInterface
+        public void openSettings() {
+            runOnUiThread(() -> startActivity(new Intent(MainActivity.this, SettingsActivity.class)));
+        }
+
+        /** Kullanıcı sitede yer seçti (gps=true: "Konumum"). */
+        @JavascriptInterface
+        public void onLocation(double lat, double lon, String name, boolean gps) {
+            if (Double.isNaN(lat) || Double.isNaN(lon)) return;
+            new Thread(() -> {
+                if (gps) { Loc.setDevice(app, lat, lon, System.currentTimeMillis(), true); Loc.setGlobalAuto(app); }
+                else Loc.setGlobalFixed(app, lat, lon, name == null ? "Konum" : name);
+                Updater.updateAll(app, false);
+            }).start();
+        }
+
+        @JavascriptInterface
+        public String locationMode() { return Loc.globalMode(app); }
     }
 }

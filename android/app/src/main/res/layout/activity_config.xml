@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#EEF3F9" android:fitsSystemWindows="true">
+<LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
+<TextView android:id="@+id/title" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="0dp" android:text="Bu widget hangi konumu göstersin?" android:textSize="20sp" android:textColor="#1E3A8A" android:textStyle="bold" />
+<TextView android:id="@+id/current" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:text="" android:textSize="14sp" android:textColor="#0F172A" />
+<Button android:id="@+id/useApp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="✓ Uygulamadaki varsayılan konum (önerilen)" android:textAllCaps="false" />
+<Button android:id="@+id/auto" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="📍 Her zaman bulunduğum konum" android:textAllCaps="false" />
+<TextView android:id="@+id/l2" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp" android:text="veya bu widget için sabit bir yer:" android:textSize="13sp" android:textColor="#64748B" />
+<LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="4dp">
+    <EditText android:id="@+id/query" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:hint="Şehir / ilçe ara (ör. Kadıköy)" android:inputType="text" android:imeOptions="actionSearch" />
+    <Button android:id="@+id/search" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Ara" android:textAllCaps="false" />
+</LinearLayout>
+<LinearLayout android:id="@+id/results" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
+<TextView android:id="@+id/msg" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:text="" android:textSize="13sp" android:textColor="#B45309" />
+<Button android:id="@+id/appSettings" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Varsayılan konum ayarları…" android:textAllCaps="false" />
+</LinearLayout>
+</ScrollView>

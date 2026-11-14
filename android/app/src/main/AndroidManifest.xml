@@ -2,23 +2,74 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <application
         android:label="Konsensüs Hava"
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="true"
         android:theme="@android:style/Theme.DeviceDefault.Light.NoActionBar">
-        <activity android:name=".MainActivity" android:exported="true">
+        <activity android:name=".MainActivity" android:exported="true" android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize|keyboardHidden|uiMode">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <receiver android:name=".RainWidget" android:exported="true" android:label="Yağmur (3 gün)">
+        <activity android:name=".SettingsActivity" android:exported="false" android:label="Widget ayarları" />
+        <activity android:name=".ConfigActivity" android:exported="true" android:label="Widget konumu">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+        <receiver android:name=".RainWidget" android:exported="true" android:label="Yağmur — 3 gün">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="com.kkyelox.hava.REFRESH" />
             </intent-filter>
-            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_info" />
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/info_rain3" />
+        </receiver>
+        <receiver android:name=".NowWidget" android:exported="true" android:label="Anlık hava">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.kkyelox.hava.REFRESH" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/info_now" />
+        </receiver>
+        <receiver android:name=".HourlyWidget" android:exported="true" android:label="Saatlik tahmin">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.kkyelox.hava.REFRESH" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/info_hourly" />
+        </receiver>
+        <receiver android:name=".DailyWidget" android:exported="true" android:label="7 günlük tahmin">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.kkyelox.hava.REFRESH" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/info_daily" />
+        </receiver>
+        <receiver android:name=".RainTodayWidget" android:exported="true" android:label="Bugün yağmur">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.kkyelox.hava.REFRESH" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/info_raintoday" />
+        </receiver>
+        <receiver android:name=".DetailsWidget" android:exported="true" android:label="Ayrıntılar">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.kkyelox.hava.REFRESH" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/info_details" />
+        </receiver>
+        <receiver android:name=".BigWidget" android:exported="true" android:label="Büyük panel">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.kkyelox.hava.REFRESH" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/info_big" />
         </receiver>
     </application>
 </manifest>

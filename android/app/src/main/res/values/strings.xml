@@ -1,3 +1,9 @@
 <resources>
-    <string name="widget_desc">Şimdiki sıcaklık ve 3 günlük yağmur olasılığı (9 model + ansambl)</string>
+    <string name="d_rain3">Yağmur — 3 gün</string>
+    <string name="d_now">Anlık hava</string>
+    <string name="d_hourly">Saatlik tahmin</string>
+    <string name="d_daily">7 günlük tahmin</string>
+    <string name="d_raintoday">Bugün yağmur</string>
+    <string name="d_details">Ayrıntılar</string>
+    <string name="d_big">Büyük panel</string>
 </resources>

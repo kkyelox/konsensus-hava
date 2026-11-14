@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/root" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="12dp" android:background="@drawable/rb0" android:gravity="center">
+    <TextView android:id="@+id/rCity" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Konum" android:textColor="#E6EEFF" android:textSize="12sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+    <TextView android:id="@+id/rTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Bugün yağmur" android:textColor="#E6EEFF" android:textSize="12sp" android:maxLines="1" android:ellipsize="end" />
+    <TextView android:id="@+id/rPct" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--" android:textColor="#FFFFFF" android:textSize="42sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+    <TextView android:id="@+id/rVerdict" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+    <TextView android:id="@+id/rWhen" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#F1F5FF" android:textSize="12sp" android:maxLines="1" android:ellipsize="end" />
+    <TextView android:id="@+id/rNext" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#E0EAFF" android:textSize="11sp" android:maxLines="1" android:ellipsize="end" />
+    <TextView android:id="@+id/rStatus" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#D6E2FF" android:textSize="9sp" android:maxLines="1" android:ellipsize="end" />
+</LinearLayout>

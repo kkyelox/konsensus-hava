@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#EEF3F9" android:fitsSystemWindows="true">
+<LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
+<TextView android:id="@+id/title" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="0dp" android:text="⚙ Widget ayarları" android:textSize="22sp" android:textColor="#1E3A8A" android:textStyle="bold" />
+<TextView android:id="@+id/current" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp" android:text="" android:textSize="15sp" android:textColor="#0F172A" android:textStyle="bold" />
+<TextView android:id="@+id/l1" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:text="Varsayılan konum (tüm widget’lar)" android:textSize="13sp" android:textColor="#64748B" />
+<Button android:id="@+id/auto" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="📍 Bulunduğum konumu kullan (otomatik)" android:textAllCaps="false" />
+<TextView android:id="@+id/l2" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="veya sabit bir yer seç:" android:textSize="13sp" android:textColor="#64748B" />
+<LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="4dp">
+    <EditText android:id="@+id/query" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:hint="Şehir / ilçe ara (ör. Kadıköy)" android:inputType="text" android:imeOptions="actionSearch" />
+    <Button android:id="@+id/search" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Ara" android:textAllCaps="false" />
+</LinearLayout>
+<LinearLayout android:id="@+id/results" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
+<TextView android:id="@+id/msg" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:text="" android:textSize="13sp" android:textColor="#B45309" />
+<TextView android:id="@+id/l3" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="18dp" android:text="Konumun arka planda da güncel kalsın" android:textSize="13sp" android:textColor="#64748B" />
+<Button android:id="@+id/bg" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Konum iznini “Her zaman” yap" android:textAllCaps="false" />
+<Button android:id="@+id/battery" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Pil kısıtlamasını kaldır (düzenli yenileme için)" android:textAllCaps="false" />
+<Button android:id="@+id/refresh" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="⟳ Tüm widget’ları şimdi yenile" android:textAllCaps="false" />
+<TextView android:id="@+id/help" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="18dp" android:text="Widget eklemek: ana ekranda boş yere basılı tut → Widget’lar → Konsensüs Hava. 7 tür var: Yağmur 3 gün, Anlık hava, Saatlik, 7 günlük, Bugün yağmur, Ayrıntılar, Büyük panel. Hepsinin boyutu değiştirilebilir; büyüttükçe daha çok saat/gün görünür. Bir widget’a ayrı konum vermek için widget’taki ⚙ simgesine dokun ya da widget’a basılı tutup “Ayarlar”ı seç." android:textSize="12sp" android:textColor="#64748B" />
+</LinearLayout>
+</ScrollView>
