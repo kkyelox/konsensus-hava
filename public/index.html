@@ -96,6 +96,26 @@ a{color:var(--acc)}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .score{font-size:44px;font-weight:800}
 
+/* ---- yağmur sekmesi ---- */
+.rdays{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.rday{border-radius:16px;padding:14px 12px;color:#fff;cursor:pointer;position:relative}
+.rday .dn{font-weight:700;font-size:15px}.rday .dd{font-size:12px;opacity:.85}
+.rday .big{font-size:38px;font-weight:800;line-height:1.1;margin:6px 0 2px}
+.rday .vd{font-weight:700;font-size:14px}
+.rday .meta{font-size:12px;opacity:.92;margin-top:6px;line-height:1.5}
+.rv5{background:linear-gradient(135deg,#1e3a8a,#2563eb)}.rv4{background:linear-gradient(135deg,#1d4ed8,#3b82f6)}
+.rv3{background:linear-gradient(135deg,#b45309,#f59e0b)}.rv2{background:linear-gradient(135deg,#0f766e,#14b8a6)}.rv1{background:linear-gradient(135deg,#15803d,#22c55e)}
+.heat{display:flex;gap:1px;margin:6px 0 2px;border-radius:8px;overflow:hidden}
+.heat i{flex:1;height:34px;display:block}
+.heatlbl{display:flex;font-size:10.5px;color:var(--mute)}
+.heatlbl span{flex:1;white-space:nowrap}
+.legendbar{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--mute);margin-top:6px}
+.legendbar b{display:inline-block;width:80px;height:8px;border-radius:4px;background:linear-gradient(90deg,#f1f5f9,#1d4ed8)}
+.nowc{display:flex;gap:3px;align-items:flex-end;height:46px;margin-top:6px}
+.nowc i{flex:1;background:#38bdf8;border-radius:3px 3px 0 0;min-height:2px}
+.vote td,.vote th{text-align:center}.vote td:first-child,.vote th:first-child{text-align:left}
+.yes{color:#1d4ed8;font-weight:700}.no{color:#94a3b8}
+@media(max-width:700px){.rdays{grid-template-columns:1fr}.rday{display:grid;grid-template-columns:1fr auto;align-items:center}.rday .big{font-size:34px;margin:0;grid-row:1/3;grid-column:2}.rday .meta{grid-column:1/-1}}
 /* ---- anlık hava kutucukları ---- */
 .hero{display:flex;align-items:center;gap:14px}
 .hero .ic{font-size:68px;line-height:1}
@@ -172,7 +192,7 @@ a{color:var(--acc)}
   .chip{white-space:nowrap;flex:0 0 auto}
   .tabs{display:none}
   .bnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:2500;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:4px 2px calc(4px + env(safe-area-inset-bottom))}
-  .bnav button{flex:1;border:0;background:none;font:inherit;font-size:10.5px;font-weight:600;color:var(--mute);padding:6px 0;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;min-height:48px}
+  .bnav button{flex:1;min-width:0;border:0;background:none;font:inherit;font-size:10px;font-weight:600;color:var(--mute);padding:6px 0;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;min-height:48px}
   .bnav button span{font-size:20px;line-height:1;filter:grayscale(1);opacity:.7}
   .bnav button.on{color:var(--acc)}.bnav button.on span{filter:none;opacity:1}
   .dtable-wrap{display:none}
@@ -212,6 +232,7 @@ a{color:var(--acc)}
 
   <div class="tabs" id="tabs">
     <button data-v="ozet" class="on">Özet</button>
+    <button data-v="yagmur">☔ Yağmur</button>
     <button data-v="saatlik">Saatlik</button>
     <button data-v="gunluk">16 Gün</button>
     <button data-v="dogruluk">Doğruluk & Tutarlılık</button>
@@ -224,6 +245,15 @@ a{color:var(--acc)}
     <div class="card"><h2>Önümüzdeki 24 saat</h2><div class="hstrip" id="hStrip"></div></div>
     <div class="card"><h2>16 günlük tahmin</h2><p class="hint">👆 Bir güne dokun → ayrıntılar ve saat saat görünüm. Renkli yüzde, tahminin tutma olasılığı.</p><div class="days" id="dayStrip" style="display:none"></div><div class="dlist" id="dayList"></div></div>
     <div class="card"><div class="grid" id="ozetKpi"></div></div>
+  </section>
+
+  <section class="view" id="v-yagmur">
+    <div class="card"><h2>☔ 3 günlük yağmur tahmini</h2><p class="hint">Her gün için en az 0,5 mm yağış olma olasılığı. 9 model ve yaklaşık 120 senaryo birlikte değerlendirilir. Güne dokun → saat saat.</p><div class="rdays" id="rDays"></div></div>
+    <div class="card"><h2>Önümüzdeki birkaç saat</h2><p class="hint">15 dakikalık çözünürlükte beklenen yağış (mm)</p><div id="rNow"></div></div>
+    <div class="card"><h2>Saat saat yağmur olasılığı (72 saat)</h2><p class="hint">Koyu mavi = yağmur çok olası. Her kutu 1 saat.</p><div id="rHeat"></div>
+      <h3>Olasılık ve beklenen miktar</h3><div class="chart sm"><canvas id="cR"></canvas></div><p class="note">Çubuk: beklenen yağış (mm/saat) · çizgi: olasılık (%) · gölge: senaryoların %10–%90 aralığı (mm)</p></div>
+    <div class="card"><h2>Modeller ne diyor?</h2><p class="hint">Her modelin günlük toplam yağışı (mm). Mavi = en az 0,5 mm yağış diyor.</p><div class="tscroll"><table class="vote" id="rVote"></table></div></div>
+    <div class="card"><h2>Bu konumda yağmur tahmini ne kadar tutuyor?</h2><div id="rSkill"></div></div>
   </section>
 
   <section class="view" id="v-saatlik">
@@ -279,6 +309,7 @@ a{color:var(--acc)}
 <div class="sheet" id="sheet" aria-hidden="true"><div class="sheet-bg" onclick="closeDay()"></div><div class="sheet-panel" role="dialog" aria-modal="true"><div class="grab"></div><div id="sheetBody"></div></div></div>
 <nav class="bnav" id="bnav">
   <button data-v="ozet" class="on"><span>🏠</span>Özet</button>
+  <button data-v="yagmur"><span>☔</span>Yağmur</button>
   <button data-v="saatlik"><span>⏱️</span>Saatlik</button>
   <button data-v="gunluk"><span>📅</span>16 Gün</button>
   <button data-v="dogruluk"><span>🎯</span>Doğruluk</button>
@@ -371,7 +402,7 @@ async function fetchAll(lat,lon){
   let done=0;const total=MODELS.length*2+ENS.length+3;
   const tick=()=>status(`${++done}/${total} kaynak yüklendi`);
   const jobs=[];
-  jobs.push(getJSON(`https://api.open-meteo.com/v1/forecast?${ll}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code,pressure_msl,cloud_cover,precipitation,is_day&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,sunrise,sunset,uv_index_max&past_days=10&forecast_days=16`)
+  jobs.push(getJSON(`https://api.open-meteo.com/v1/forecast?${ll}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code,pressure_msl,cloud_cover,precipitation,is_day&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,sunrise,sunset,uv_index_max&past_days=10&forecast_days=16&minutely_15=precipitation&forecast_minutely_15=24`)
     .then(j=>{D.main=j;setSrc('main',true,'Analiz zamanı '+j.current.time.replace('T',' '))}).catch(e=>setSrc('main',false,e.message)).finally(tick));
   for(const m of MODELS){
     jobs.push(getJSON(`https://api.open-meteo.com/v1/forecast?${ll}&forecast_days=16&hourly=${HV.join(',')}&models=${m.id}`)
@@ -579,7 +610,7 @@ const dirTxt=d=>d==null?'':['K','KD','D','GD','G','GB','B','KB'][Math.round(d/45
 
 /* ============ çizim ============ */
 function renderAll(){
-  renderNow();renderSummary();renderDays();renderHourly();renderDaily();renderVerification();renderConsistency();renderMyLog();renderServerLog();renderSources();renderMethod();
+  renderNow();renderSummary();renderDays();renderHourly();renderDaily();renderVerification();renderConsistency();renderRain();renderMyLog();renderServerLog();renderSources();renderMethod();
   if(map)updateMap();
 }
 function renderNow(){
@@ -687,6 +718,70 @@ function renderSheet(){
     {type:'bar',label:'Yağış mm',data:hs.map(h=>+h.prec.toFixed(2)),backgroundColor:'#38bdf8',yAxisID:'y1'}]},
     options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false}},
       scales:{x:{grid:{display:false},ticks:{maxTicksLimit:8,maxRotation:0}},y:{position:'left',ticks:{callback:v=>v+'°'}},y1:{position:'right',beginAtZero:true,suggestedMax:2,grid:{display:false},ticks:{callback:v=>v+'mm'}}}}});
+}
+/* ============ yağmur sekmesi ============ */
+const pct=(a,q)=>{if(!a.length)return null;const b=[...a].sort((x,y)=>x-y);const i=(b.length-1)*q,lo=Math.floor(i),hi=Math.ceil(i);return b[lo]+(b[hi]-b[lo])*(i-lo)};
+function verdict(p){return p>=0.8?[5,'Yağmur bekleniyor','☔']:p>=0.6?[4,'Büyük ihtimalle yağacak','🌧️']:p>=0.4?[3,'Belirsiz — şemsiye al','🌦️']:p>=0.2?[2,'Pek olası değil','⛅']:[1,'Yağmur beklenmiyor','☀️']}
+function rainWindows(hs){const w=[];let st=null;hs.forEach((h,i)=>{const on=(h.pop||0)>=0.5;if(on&&st==null)st=i;if((!on||i===hs.length-1)&&st!=null){const en=on?i:i-1;w.push([hs[st].t.slice(11,16),String((+hs[en].t.slice(11,13)+1)%24).padStart(2,'0')+':00']);st=null}});return w}
+function dayEnsemble(d){
+  const sums=[];
+  for(const e of Object.values(D.ens)){for(let k=0;k<e.prec.length;k++){let s=0,n=0;for(const h of F.hours){if(h.d!==d)continue;const j=e.map.get(h.t);if(j==null)continue;const v=e.prec[k][j];if(ok(v)){s+=v;n++}}if(n>=18)sums.push(s)}}
+  return sums;
+}
+function modelDaySum(id,d){const f=D.fc[id];if(!f)return null;let s=0,n=0;for(const h of F.hours){if(h.d!==d)continue;const i=f.map.get(h.t);if(i!=null&&ok(f.precipitation[i])){s+=f.precipitation[i];n++}}return n>=18?s:null}
+function renderRain(){
+  const ds=F.days.slice(0,3);if(!ds.length)return;
+  // gün kartları
+  $('#rDays').innerHTML=ds.map(d=>{
+    const hs=F.hours.filter(h=>h.d===d.d);const[lv,txt,ic]=verdict(d.pop);
+    const ens=dayEnsemble(d.d);const any=ens.length?ens.filter(x=>x>=0.2).length/ens.length:null;
+    const p10=pct(ens,.1),p50=pct(ens,.5),p90=pct(ens,.9);
+    const votes=MODELS.map(m=>modelDaySum(m.id,d.d)).filter(v=>v!=null);const yes=votes.filter(v=>v>=0.5).length;
+    const win=rainWindows(hs.filter(h=>d.L>0||h.t>=F.now.slice(0,13)));
+    const peak=hs.reduce((m,h)=>h.prec>m.prec?h:m,hs[0]);
+    const snow=hs.some(h=>h.prec>=0.1&&h.temp<=1);
+    const amt=p50!=null?(p90<0.2?'yok denecek kadar az':`${fmt(p10,1)}–${fmt(p90,1)} mm (çoğunlukla ~${fmt(p50,1)})`):fmt(d.psum,1)+' mm';
+    return`<div class="rday rv${lv}" onclick="openDay('${d.d}')"><div><div class="dn">${dname(d.d,F.today)} <span class="dd">${dshort(d.d)}</span></div><div class="vd">${ic} ${snow&&lv>=3?txt.replace('Yağmur','Kar').replace('yağacak','kar yağacak'):txt}</div></div>
+      <div class="big">%${fmt(d.pop*100)}</div>
+      <div class="meta">🕐 ${win.length?win.map(w=>w[0]+'–'+w[1]).join(', '):(d.pop>=0.4?'saat belirsiz':'yağışlı saat yok')}<br>💧 Miktar: ${amt}${peak&&peak.prec>=0.5?`<br>⚡ En yoğun: ${peak.t.slice(11,16)} (${fmt(peak.prec,1)} mm/sa)`:''}<br>🗳️ ${yes}/${votes.length} model yağmur diyor${any!=null?` · senaryoların %${fmt(any*100)}’inde damla düşüyor`:''}</div></div>`}).join('');
+  // nowcast
+  const m=D.main&&D.main.minutely_15;
+  if(m&&m.precipitation&&m.precipitation.some(ok)){
+    const idx=m.time.map((t,i)=>[t,i]).filter(([t])=>t>=F.now.slice(0,15)).slice(0,16);
+    const vals=idx.map(([t,i])=>m.precipitation[i]||0);const mx=Math.max(...vals,0.2);
+    const first=idx.find(([t,i])=>(m.precipitation[i]||0)>=0.05);
+    $('#rNow').innerHTML=`<div style="font-weight:600">${first?`🌧️ Yağış ${first[0].slice(11,16)} civarı ${first===idx[0]?'sürüyor / başlıyor':'başlıyor'}`:'✅ Önümüzdeki 4 saatte yağış görünmüyor'}</div>
+      <div class="nowc">${vals.map(v=>`<i style="height:${Math.max(2,v/mx*100)}%;opacity:${v>0.02?1:.25}" title="${fmt(v,2)} mm"></i>`).join('')}</div>
+      <div class="heatlbl">${idx.filter((x,k)=>k%4===0).map(([t])=>`<span>${t.slice(11,16)}</span>`).join('')}</div>
+      <p class="note">Bu veri modelden gelir, radar değildir. Canlı radar için <a href="#" onclick="showTab('harita');return false">Uydu & Radar</a> sekmesine bak.</p>`;
+  } else $('#rNow').innerHTML='<p class="mute">Bu konum için 15 dakikalık veri yok.</p>';
+  // ısı şeridi
+  const st=Math.max(F.hours.findIndex(h=>h.t>=F.now.slice(0,13)),0);const hs=F.hours.slice(st,st+72);
+  const rows=[0,24,48].map(o=>hs.slice(o,o+24)).filter(r=>r.length);
+  $('#rHeat').innerHTML=rows.map(r=>`<div style="font-size:12.5px;font-weight:600;margin-top:8px">${dname(r[0].d,F.today)} ${r[0].t.slice(11,16)} → ${r[r.length-1].t.slice(11,16)}</div>
+     <div class="heat">${r.map(h=>{const p=h.pop||0;return`<i style="background:rgba(29,78,216,${(0.06+p*0.94).toFixed(2)})" title="${h.t.replace('T',' ')} · %${fmt(p*100)} · ${fmt(h.prec,1)} mm"></i>`}).join('')}</div>
+     <div class="heatlbl">${r.filter((h,k)=>k%6===0).map(h=>`<span>${h.t.slice(11,13)}</span>`).join('')}</div>`).join('')+
+    '<div class="legendbar">%0 <b></b> %100</div>';
+  // grafik
+  const q=hs.map(h=>{const v=[];for(const e of Object.values(D.ens)){const j=e.map.get(h.t);if(j==null)continue;for(const a of e.prec)if(ok(a[j]))v.push(a[j])}return v});
+  killChart('r');
+  charts.r=new Chart($('#cR'),{data:{labels:hs.map(h=>h.t.slice(11,13)==='00'?dname(h.d,F.today):h.t.slice(11,13)),datasets:[
+    {type:'line',label:'%90',data:q.map(v=>v.length?+pct(v,.9).toFixed(2):null),borderWidth:0,pointRadius:0,fill:false,yAxisID:'y'},
+    {type:'line',label:'%10',data:q.map(v=>v.length?+pct(v,.1).toFixed(2):null),borderWidth:0,pointRadius:0,fill:'-1',backgroundColor:'rgba(56,189,248,.18)',yAxisID:'y'},
+    {type:'bar',label:'Beklenen mm',data:hs.map(h=>+h.prec.toFixed(2)),backgroundColor:'#38bdf8',yAxisID:'y'},
+    {type:'line',label:'Olasılık %',data:hs.map(h=>Math.round((h.pop||0)*100)),borderColor:'#1d4ed8',borderWidth:2,pointRadius:0,tension:.3,yAxisID:'y1'}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{filter:i=>!/%[19]0$/.test(i.dataset.label)}},
+      scales:{x:{grid:{display:false},ticks:{maxTicksLimit:innerWidth<700?7:12,maxRotation:0}},y:{beginAtZero:true,suggestedMax:1,title:{display:true,text:'mm'}},y1:{position:'right',min:0,max:100,grid:{display:false}}}}});
+  // model oylaması
+  const cols=ds.map(d=>d.d);
+  $('#rVote').innerHTML=`<tr><th>Model</th>${cols.map(d=>`<th>${dname(d,F.today)}</th>`).join('')}</tr>`+
+    MODELS.filter(m=>D.fc[m.id]).map(m=>`<tr><td>${m.name}${m.id.includes('aifs')?' 🤖':''}</td>${cols.map(d=>{const v=modelDaySum(m.id,d);return v==null?'<td class="no">veri yok</td>':`<td class="${v>=0.5?'yes':'no'}">${v>=0.5?'💧 '+fmt(v,1):'— '+(v>0.04?fmt(v,1):'')}</td>`}).join('')}</tr>`).join('')+
+    `<tr style="background:#eff6ff"><td><b>Senaryolar (ansambl)</b></td>${cols.map(d=>{const e=dayEnsemble(d);return`<td><b>${e.length?'%'+fmt(e.filter(x=>x>=0.5).length/e.length*100):'–'}</b></td>`}).join('')}</tr>`;
+  // beceri
+  if(V.ok){const r=[1,2,3].map(L=>({L,b:V.blend[L]})).filter(x=>x.b&&x.b.pAcc!=null);
+    $('#rSkill').innerHTML=r.length?`<div class="grid">${r.map(({L,b})=>`<div class="kpi"><div class="l">${L} gün önceden</div><div class="v">%${fmt(b.pAcc*100)}</div><div class="l">yağışlı/kuru günü doğru bilme${b.pod!=null?` · yağmurlu günlerin %${fmt(b.pod*100)}’ini yakaladı`:''}${b.far!=null?` · yanlış alarm %${fmt(b.far*100)}`:''}</div></div>`).join('')}</div>
+      <p class="note">Son ~30 günde, bu konumda modellerin birleşik tahmini gerçekleşen yağışla (ERA5, ≥1 mm/gün) karşılaştırıldı. Az yağışlı dönemlerde örnek sayısı küçük olduğundan oranlar oynak olabilir.</p>`:'<p class="mute">Yeterli geçmiş yok.</p>'}
+  else $('#rSkill').innerHTML='<p class="mute">Geçmiş doğrulama verisi şu an alınamadı; birkaç dakika sonra yenile.</p>';
 }
 function renderRecent(){
   const r=load('wx_recent',[]);const k=l=>(+l.lat).toFixed(2)+','+(+l.lon).toFixed(2);
