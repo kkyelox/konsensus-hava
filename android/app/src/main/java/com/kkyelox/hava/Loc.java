@@ -19,6 +19,8 @@ public class Loc {
 
     Loc(double lat, double lon, String name, boolean auto) { this.lat = lat; this.lon = lon; this.name = name == null ? "" : name; this.auto = auto; }
 
+    static final long CHECK_EVERY = 30 * 60_000L;
+
     public String key() { return String.format(Locale.US, "%.2f_%.2f", lat, lon); }
 
     static SharedPreferences sp(Context c) { return c.getSharedPreferences("hava", Context.MODE_PRIVATE); }
@@ -83,13 +85,17 @@ public class Loc {
         if (name.isEmpty() || (moved && !network)) name = String.format(Locale.US, "%.2f, %.2f", lat, lon);
         SharedPreferences.Editor e = p.edit();
         pd(e, "dev_lat", lat); pd(e, "dev_lon", lon);
-        e.putLong("dev_time", time).putString("dev_name", name).apply();
+        e.putLong("dev_time", time).putLong("dev_check", System.currentTimeMillis()).putString("dev_name", name).apply();
     }
 
     public static Loc device(Context c, boolean network) {
         SharedPreferences p = sp(c);
-        Location l = lastKnown(c);
-        if (l != null && l.getTime() > p.getLong("dev_time", 0)) setDevice(c, l.getLatitude(), l.getLongitude(), l.getTime(), network);
+        long now = System.currentTimeMillis();
+        if (now - p.getLong("dev_check", 0) > CHECK_EVERY) {
+            p.edit().putLong("dev_check", now).apply();
+            Location l = lastKnown(c);
+            if (l != null && l.getTime() > p.getLong("dev_time", 0)) setDevice(c, l.getLatitude(), l.getLongitude(), l.getTime(), network);
+        }
         if (!p.contains("dev_lat")) return null;
         return new Loc(gd(p, "dev_lat"), gd(p, "dev_lon"), p.getString("dev_name", "Konumum"), true);
     }
@@ -107,6 +113,19 @@ public class Loc {
             return new Loc(gd(p, "w" + id + "_lat"), gd(p, "w" + id + "_lon"), p.getString("w" + id + "_name", "Konum"), false);
         if ("auto".equals(m)) return device(c, network);
         return global(c, network);
+    }
+
+    /** Bulunduğun yeri kullanan bir ayar var mı? (yoksa konuma hiç dokunma) */
+    public static boolean usesDevice(Context c) {
+        if (!"fixed".equals(globalMode(c))) return true;
+        for (String k : sp(c).getAll().keySet())
+            if (k.startsWith("w") && k.endsWith("_mode") && "auto".equals(sp(c).getString(k, ""))) return true;
+        return false;
+    }
+
+    /** Son taze konum alımından bu yana 30 dk geçti mi? */
+    public static boolean freshDue(Context c) {
+        return System.currentTimeMillis() - sp(c).getLong("dev_check", 0) > CHECK_EVERY;
     }
 
     public static String describe(Context c) {

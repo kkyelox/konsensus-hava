@@ -11,8 +11,8 @@ import java.nio.charset.StandardCharsets;
 
 /** Konum başına önbellek: tüm widget'lar aynı veriyi paylaşır (25 dk). */
 public class Data {
-    static final long FRESH = 30 * 60 * 1000L;   // modeller + ansambl
-    static final long CUR_FRESH = 100 * 1000L;    // anlık değerler (~2 dk)
+    static final long FRESH = 28 * 60 * 1000L;   // tüm veri yarım saatte bir
+    static final long CUR_FRESH = FRESH;          // ayrı anlık istek yok
     public static volatile String lastError = "";
 
     static File file(Context c, Loc l) { return new File(c.getCacheDir(), "wx_" + l.key() + ".json"); }
@@ -64,7 +64,7 @@ public class Data {
         JSONObject cached = f.exists() ? read(f) : null;
         if (cached == null) return null;
         Forecast.Result r = Forecast.parse(cached);
-        r.stale = System.currentTimeMillis() - Math.max(cached.optLong("t", 0), cached.optLong("tc", 0)) > 10 * 60 * 1000L;
+        r.stale = System.currentTimeMillis() - Math.max(cached.optLong("t", 0), cached.optLong("tc", 0)) > 45 * 60 * 1000L;
         return r;
     }
 }

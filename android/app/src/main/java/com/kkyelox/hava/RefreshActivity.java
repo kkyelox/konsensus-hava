@@ -39,10 +39,14 @@ public class RefreshActivity extends Activity {
             try { layout = cls.getDeclaredConstructor().newInstance().layout(); } catch (Exception e) { continue; }
             for (int id : m.getAppWidgetIds(new ComponentName(app, cls))) targets.add(new int[]{id, layout});
         }
-        new Thread(() -> {
-            try { Updater.updateAll(app, true); } catch (Throwable ignored) { }
-            done = true;
-        }).start();
+        if (Loc.hasPermission(app) && Loc.usesDevice(app)) {
+            Gps.freshAndSave(this, () -> done = true, true);   // konum + veri
+        } else {
+            new Thread(() -> {
+                try { Updater.updateAll(app, true); } catch (Throwable ignored) { }
+                done = true;
+            }).start();
+        }
         h.post(spin);
     }
 

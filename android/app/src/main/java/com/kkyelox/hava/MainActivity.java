@@ -80,8 +80,9 @@ public class MainActivity extends Activity {
         super.onResume();
         Ticker.schedule(getApplicationContext());
         // Otomatik konumdaysa konumu tazele ve widget'ları güncelle
-        if (Loc.hasPermission(this)) Gps.freshAndSave(this, null);
-        else { final Context app = getApplicationContext(); new Thread(() -> Updater.updateAll(app, false)).start(); }
+        final Context app = getApplicationContext();
+        if (Loc.hasPermission(this) && Loc.usesDevice(app) && Loc.freshDue(app)) Gps.freshAndSave(this, null);
+        else new Thread(() -> Updater.updateAll(app, false)).start();
     }
 
     String url(Intent i) {
@@ -111,7 +112,7 @@ public class MainActivity extends Activity {
     public void onRequestPermissionsResult(int code, String[] p, int[] r) {
         boolean ok = Loc.hasPermission(this);
         if (geoCb != null) { geoCb.invoke(geoOrigin, ok, false); geoCb = null; }
-        if (ok) Gps.freshAndSave(this, null);
+        if (ok && Loc.usesDevice(getApplicationContext())) Gps.freshAndSave(this, null);
     }
 
     /** Siteden çağrılır: window.HavaApp */

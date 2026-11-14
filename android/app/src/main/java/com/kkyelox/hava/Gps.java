@@ -18,8 +18,12 @@ public class Gps {
         a.requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, REQ);
     }
 
-    public static void fresh(Activity a, Cb cb) {
-        if (!Loc.hasPermission(a)) { cb.done(null); return; }
+    public static void fresh(Activity a, Cb cb0) {
+        if (!Loc.hasPermission(a)) { cb0.done(null); return; }
+        final boolean[] once = {false};
+        final android.os.Handler h = new android.os.Handler(Looper.getMainLooper());
+        final Cb cb = l -> { if (once[0]) return; once[0] = true; cb0.done(l); };
+        h.postDelayed(() -> cb.done(Loc.lastKnown(a)), 8000); // en fazla 8 sn bekle
         LocationManager lm = (LocationManager) a.getSystemService(Activity.LOCATION_SERVICE);
         try {
             String prov = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) ? LocationManager.NETWORK_PROVIDER
@@ -41,12 +45,14 @@ public class Gps {
     }
 
     /** Taze konumu kaydet (arka planda yer adı) ve widget'ları yenile. */
-    public static void freshAndSave(Activity a, Runnable after) {
+    public static void freshAndSave(Activity a, Runnable after) { freshAndSave(a, after, false); }
+
+    public static void freshAndSave(Activity a, Runnable after, boolean forceData) {
         fresh(a, l -> {
             final android.content.Context app = a.getApplicationContext();
             new Thread(() -> {
                 if (l != null) Loc.setDevice(app, l.getLatitude(), l.getLongitude(), System.currentTimeMillis(), true);
-                Updater.updateAll(app, false);
+                Updater.updateAll(app, forceData);
                 if (after != null) a.runOnUiThread(after);
             }).start();
         });
