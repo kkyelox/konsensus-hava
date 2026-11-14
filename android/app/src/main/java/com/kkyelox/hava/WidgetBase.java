@@ -68,8 +68,8 @@ public abstract class WidgetBase extends AppWidgetProvider {
         Intent cfg = new Intent(c, ConfigActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id);
         v.setOnClickPendingIntent(R.id.hSettings, PendingIntent.getActivity(c, id * 10 + 2, cfg, fl));
-        Intent rf = new Intent(c, RefreshActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
-        v.setOnClickPendingIntent(R.id.hRefresh, PendingIntent.getActivity(c, id * 10 + 3, rf, fl));
+        Intent rf = new Intent(c, RefreshService.class);
+        v.setOnClickPendingIntent(R.id.hRefresh, PendingIntent.getForegroundService(c, id * 10 + 3, rf, fl));
         v.setImageViewResource(R.id.hRefresh, R.drawable.rf0);
     }
 

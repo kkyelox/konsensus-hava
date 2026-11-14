@@ -123,6 +123,12 @@ public class Loc {
         return false;
     }
 
+    /** ⟳ için: 30 dk beklemeden son bilinen konuma bak (pasif, GPS açmaz). */
+    public static void refreshDeviceNow(Context c) {
+        sp(c).edit().putLong("dev_check", 0).apply();
+        device(c, true);
+    }
+
     /** Son taze konum alımından bu yana 30 dk geçti mi? */
     public static boolean freshDue(Context c) {
         return System.currentTimeMillis() - sp(c).getLong("dev_check", 0) > CHECK_EVERY;
