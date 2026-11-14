@@ -32,12 +32,23 @@ public class Forecast {
         public boolean isDay = true;
         public String now = "";        // yerel saat "2026-11-14T15:45"
         public Day[] days = new Day[3];
+        public StringBuilder errors = new StringBuilder();
     }
 
     static String get(String u) throws Exception {
+        Exception last = null;
+        for (int a = 0; a < 3; a++) {
+            try { return get1(u); }
+            catch (Exception e) { last = e; try { Thread.sleep(1200L * (a + 1)); } catch (InterruptedException ignored) { } }
+        }
+        throw last;
+    }
+
+    static String get1(String u) throws Exception {
         HttpURLConnection c = (HttpURLConnection) new URL(u).openConnection();
-        c.setConnectTimeout(8000);
-        c.setReadTimeout(12000);
+        c.setConnectTimeout(10000);
+        c.setReadTimeout(15000);
+        c.setUseCaches(false);
         c.setRequestProperty("User-Agent", "KonsensusHava-Widget");
         try {
             BufferedReader r = new BufferedReader(new InputStreamReader(
@@ -62,19 +73,30 @@ public class Forecast {
         String ll = String.format(Locale.US, "latitude=%.4f&longitude=%.4f&timezone=auto", lat, lon);
         Result res = new Result();
 
-        // 1) anlık
-        JSONObject cur = new JSONObject(get("https://api.open-meteo.com/v1/forecast?" + ll
-                + "&current=temperature_2m,weather_code,is_day&forecast_days=3&daily=precipitation_sum"));
-        JSONObject cc = cur.getJSONObject("current");
-        res.temp = cc.optDouble("temperature_2m", Double.NaN);
-        res.code = cc.optInt("weather_code", -1);
-        res.isDay = cc.optInt("is_day", 1) == 1;
-        res.now = cc.optString("time", "");
-        JSONArray dts = cur.getJSONObject("daily").getJSONArray("time");
+        // tarihler (yedek: telefonun saati)
+        java.text.SimpleDateFormat f = new java.text.SimpleDateFormat("yyyy-MM-dd", Locale.US);
+        java.util.Calendar cal = java.util.Calendar.getInstance();
         for (int d = 0; d < 3; d++) {
             res.days[d] = new Day();
-            res.days[d].date = dts.optString(d, "");
+            res.days[d].date = f.format(cal.getTime());
+            cal.add(java.util.Calendar.DAY_OF_MONTH, 1);
         }
+        res.now = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm", Locale.US).format(new java.util.Date());
+        int okParts = 0;
+
+        // 1) anlık
+        try {
+            JSONObject cur = new JSONObject(get("https://api.open-meteo.com/v1/forecast?" + ll
+                    + "&current=temperature_2m,weather_code,is_day&forecast_days=3&daily=precipitation_sum"));
+            JSONObject cc = cur.getJSONObject("current");
+            res.temp = cc.optDouble("temperature_2m", Double.NaN);
+            res.code = cc.optInt("weather_code", -1);
+            res.isDay = cc.optInt("is_day", 1) == 1;
+            res.now = cc.optString("time", res.now);
+            JSONArray dts = cur.getJSONObject("daily").getJSONArray("time");
+            for (int d = 0; d < 3 && d < dts.length(); d++) res.days[d].date = dts.optString(d, res.days[d].date);
+            okParts++;
+        } catch (Exception e) { res.errors.append("anlık: ").append(short_(e)).append("; "); }
 
         // 2) çoklu model günlük toplam yağış
         StringBuilder ms = new StringBuilder();
@@ -96,7 +118,8 @@ public class Forecast {
                     day.mm = v.get(v.size() / 2);
                 }
             }
-        } catch (Exception ignored) { }
+            okParts++;
+        } catch (Exception e) { res.errors.append("modeller: ").append(short_(e)).append("; "); }
 
         // 3) ansambl: günlük ≥0.5 mm üye oranı + saatlik olasılık (yağış saatleri)
         double[] ensWet = new double[3];
@@ -131,7 +154,8 @@ public class Forecast {
                     }
                     for (int d = 0; d < 3; d++) if (cnt[d] >= 18) { ensN[d]++; if (sum[d] >= 0.5) ensWet[d]++; }
                 }
-            } catch (Exception ignored) { }
+                okParts++;
+            } catch (Exception ex) { res.errors.append(e).append(": ").append(short_(ex)).append("; "); }
         }
 
         for (int d = 0; d < 3; d++) {
@@ -159,7 +183,14 @@ public class Forecast {
                 }
             }
         }
+        if (okParts == 0) throw new Exception(res.errors.toString());
         return res;
+    }
+
+    static String short_(Exception e) {
+        String m = e.getMessage();
+        String n = e.getClass().getSimpleName();
+        return n + (m == null ? "" : " " + (m.length() > 80 ? m.substring(0, 80) : m));
     }
 
     public static String icon(int code, boolean day) {

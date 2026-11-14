@@ -54,10 +54,24 @@ public class RainWidget extends AppWidgetProvider {
         }
         double lat = Double.longBitsToDouble(sp.getLong("lat", 0));
         double lon = Double.longBitsToDouble(sp.getLong("lon", 0));
-        String name = sp.getString("name", "Konum");
-        v.setTextViewText(R.id.city, name);
         try {
-            Forecast.Result r = Forecast.fetch(lat, lon);
+            render(c, Forecast.fetch(lat, lon));
+        } catch (Throwable e) {
+            String m = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+            sp.edit().putString("lastError", m).apply();
+            v.setTextViewText(R.id.city, sp.getString("name", "Konum"));
+            v.setTextViewText(R.id.status, "Hata: " + m);
+            push(c, v);
+        }
+    }
+
+    /** Hesaplanmış sonucu widget'a yazar. */
+    public static void render(Context c, Forecast.Result r) {
+        SharedPreferences sp = c.getSharedPreferences("hava", Context.MODE_PRIVATE);
+        RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.widget);
+        bindClicks(c, v, sp);
+        v.setTextViewText(R.id.city, sp.getString("name", "Konum"));
+        {
             v.setTextViewText(R.id.icon, Forecast.icon(r.code, r.isDay));
             v.setTextViewText(R.id.temp, Double.isNaN(r.temp) ? "--°" : Math.round(r.temp) + "°");
             int[][] ids = {
@@ -79,10 +93,8 @@ public class RainWidget extends AppWidgetProvider {
                 v.setTextViewText(ids[d][4], t);
             }
             String hm = new SimpleDateFormat("HH:mm", new Locale("tr")).format(new Date());
-            v.setTextViewText(R.id.status, "Güncellendi " + hm + " · 9 model");
-            sp.edit().putLong("last", System.currentTimeMillis()).apply();
-        } catch (Exception e) {
-            v.setTextViewText(R.id.status, "Bağlantı yok — ⟳ ile tekrar dene");
+            v.setTextViewText(R.id.status, r.errors.length() > 0 ? "Kısmi veri " + hm + " · " + r.errors : "Güncellendi " + hm + " · 9 model");
+            sp.edit().putLong("last", System.currentTimeMillis()).remove("lastError").apply();
         }
         push(c, v);
     }

@@ -51,6 +51,41 @@ public class MainActivity extends Activity {
                 startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(RainWidget.SITE))));
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (sp.contains("lat")) refreshNow();
+    }
+
+    /** Uygulama ön plandayken veriyi çeker, widget'a yazar ve sonucu/hatayı gösterir. */
+    void refreshNow() {
+        msg.setText("Veri alınıyor…");
+        final Context app = getApplicationContext();
+        final double la = Double.longBitsToDouble(sp.getLong("lat", 0)), lo = Double.longBitsToDouble(sp.getLong("lon", 0));
+        new Thread(() -> {
+            String out;
+            try {
+                Forecast.Result r = Forecast.fetch(la, lo);
+                RainWidget.render(app, r);
+                StringBuilder b = new StringBuilder("✓ Widget güncellendi. Şu an " + (Double.isNaN(r.temp) ? "--" : Math.round(r.temp)) + "°\n");
+                for (int d = 0; d < 3; d++) {
+                    Forecast.Day day = r.days[d];
+                    b.append(RainWidget.dayName(day.date, d)).append(": ")
+                     .append(day.pop < 0 ? "--" : "%" + Math.round(day.pop * 100)).append(" ")
+                     .append(Forecast.label(Forecast.level(day.pop)))
+                     .append(day.window.isEmpty() ? "" : " (" + day.window + ")").append('\n');
+                }
+                if (r.errors.length() > 0) b.append("Not: ").append(r.errors);
+                out = b.toString();
+            } catch (Throwable e) {
+                out = "⚠ Veri alınamadı: " + e.getClass().getSimpleName() + " — " + e.getMessage()
+                        + "\nİnternet açık mı? Pil tasarrufu / veri tasarrufu bu uygulamayı engelliyor olabilir.";
+            }
+            final String o = out;
+            ui.post(() -> msg.setText(o));
+        }).start();
+    }
+
     void showCurrent() {
         current.setText(sp.contains("lat") ? "Seçili konum: " + sp.getString("name", "") : "Seçili konum: yok");
     }
@@ -59,12 +94,7 @@ public class MainActivity extends Activity {
         sp.edit().putLong("lat", Double.doubleToRawLongBits(lat)).putLong("lon", Double.doubleToRawLongBits(lon))
                 .putString("name", name).apply();
         showCurrent();
-        msg.setText("Kaydedildi. Widget güncelleniyor…");
-        final Context app = getApplicationContext();
-        new Thread(() -> {
-            RainWidget.update(app);
-            ui.post(() -> msg.setText("✓ Widget güncellendi. Ana ekrana eklemediysen: boş yere basılı tut → Widget'lar → Konsensüs Hava."));
-        }).start();
+        refreshNow();
     }
 
     void search(String text) {
