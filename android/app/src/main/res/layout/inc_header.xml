@@ -6,6 +6,6 @@
         <TextView android:id="@+id/hCity" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Konum" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
         <TextView android:id="@+id/hStatus" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#DDE7FF" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" />
     </LinearLayout>
-    <TextView android:id="@+id/hRefresh" android:layout_width="30dp" android:layout_height="30dp" android:gravity="center" android:text="⟳" android:textColor="#FFFFFF" android:textSize="17sp" />
+    <ImageView android:id="@+id/hRefresh" android:layout_width="32dp" android:layout_height="32dp" android:padding="6dp" android:src="@drawable/rf0" android:contentDescription="Yenile" />
     <TextView android:id="@+id/hSettings" android:layout_width="30dp" android:layout_height="30dp" android:gravity="center" android:text="⚙" android:textColor="#FFFFFF" android:textSize="15sp" />
 </LinearLayout>

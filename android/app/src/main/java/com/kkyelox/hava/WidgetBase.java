@@ -31,7 +31,11 @@ public abstract class WidgetBase extends AppWidgetProvider {
         final PendingResult pr = goAsync();
         final Class<? extends WidgetBase> cls = getClass();
         new Thread(() -> { try { Updater.update(c, cls, ids, false, null, true); } finally { pr.finish(); } }).start();
+        Ticker.schedule(c);
     }
+
+    @Override
+    public void onEnabled(Context c) { Ticker.schedule(c); }
 
     @Override
     public void onAppWidgetOptionsChanged(Context c, AppWidgetManager m, int id, Bundle o) {
@@ -64,8 +68,9 @@ public abstract class WidgetBase extends AppWidgetProvider {
         Intent cfg = new Intent(c, ConfigActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id);
         v.setOnClickPendingIntent(R.id.hSettings, PendingIntent.getActivity(c, id * 10 + 2, cfg, fl));
-        Intent rf = new Intent(c, getClass()).setAction(ACTION_REFRESH);
-        v.setOnClickPendingIntent(R.id.hRefresh, PendingIntent.getBroadcast(c, id * 10 + 3, rf, fl));
+        Intent rf = new Intent(c, RefreshActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
+        v.setOnClickPendingIntent(R.id.hRefresh, PendingIntent.getActivity(c, id * 10 + 3, rf, fl));
+        v.setImageViewResource(R.id.hRefresh, R.drawable.rf0);
     }
 
     /** Veri yokken gösterilecek mesaj (tüm düzenlerde ortak id'ler). */

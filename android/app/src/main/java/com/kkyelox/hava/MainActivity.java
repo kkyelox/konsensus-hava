@@ -78,6 +78,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        Ticker.schedule(getApplicationContext());
         // Otomatik konumdaysa konumu tazele ve widget'ları güncelle
         if (Loc.hasPermission(this)) Gps.freshAndSave(this, null);
         else { final Context app = getApplicationContext(); new Thread(() -> Updater.updateAll(app, false)).start(); }

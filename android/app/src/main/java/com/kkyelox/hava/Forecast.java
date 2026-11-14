@@ -121,6 +121,26 @@ public class Forecast {
         return raw;
     }
 
+    static final String CUR = "temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code,is_day";
+
+    /** 2 dakikalık hafif istek: sadece anlık değerler. */
+    public static String downloadCurrent(double lat, double lon) throws Exception {
+        String ll = String.format(Locale.US, "latitude=%.4f&longitude=%.4f&timezone=auto", lat, lon);
+        return get1("https://api.open-meteo.com/v1/forecast?" + ll + "&current=" + CUR);
+    }
+
+    static void applyCurrent(Result res, JSONObject c) {
+        res.temp = c.optDouble("temperature_2m", res.temp);
+        res.feels = c.optDouble("apparent_temperature", res.feels);
+        res.rh = c.optDouble("relative_humidity_2m", res.rh);
+        res.wind = c.optDouble("wind_speed_10m", res.wind);
+        res.gust = c.optDouble("wind_gusts_10m", res.gust);
+        res.dir = c.optDouble("wind_direction_10m", res.dir);
+        res.code = c.optInt("weather_code", res.code);
+        res.isDay = c.optInt("is_day", res.isDay ? 1 : 0) == 1;
+        res.now = c.optString("time", res.now);
+    }
+
     static double val(JSONArray a, int i) {
         if (a == null || i < 0 || i >= a.length() || a.isNull(i)) return Double.NaN;
         return a.optDouble(i, Double.NaN);
@@ -144,16 +164,11 @@ public class Forecast {
         try {
             if (raw.has("main")) {
                 JSONObject m = new JSONObject(raw.getString("main"));
-                JSONObject c = m.getJSONObject("current");
-                res.temp = c.optDouble("temperature_2m", Double.NaN);
-                res.feels = c.optDouble("apparent_temperature", Double.NaN);
-                res.rh = c.optDouble("relative_humidity_2m", Double.NaN);
-                res.wind = c.optDouble("wind_speed_10m", Double.NaN);
-                res.gust = c.optDouble("wind_gusts_10m", Double.NaN);
-                res.dir = c.optDouble("wind_direction_10m", Double.NaN);
-                res.code = c.optInt("weather_code", -1);
-                res.isDay = c.optInt("is_day", 1) == 1;
-                res.now = c.optString("time", res.now);
+                applyCurrent(res, m.getJSONObject("current"));
+                if (raw.has("cur") && raw.optLong("tc", 0) >= raw.optLong("t", 0)) {
+                    try { applyCurrent(res, new JSONObject(raw.getString("cur")).getJSONObject("current")); } catch (Exception ignored) { }
+                }
+                res.fetched = Math.max(raw.optLong("t", 0), raw.optLong("tc", 0));
                 JSONObject dl = m.getJSONObject("daily");
                 JSONArray dt = dl.getJSONArray("time");
                 for (int d = 0; d < ND && d < dt.length(); d++) {
@@ -229,6 +244,11 @@ public class Forecast {
             } catch (Exception e) { res.errors.append("ansambl-çözüm: ").append(short_(e)).append("; "); }
         }
         String nowH = res.now.length() >= 13 ? res.now.substring(0, 13) : "";
+        try {
+            // önbellek eskiyse "şimdi"yi telefonun saatine göre ilerlet (yerel saat dilimi aynı varsayımıyla)
+            String phone = new SimpleDateFormat("yyyy-MM-dd'T'HH", Locale.US).format(new Date());
+            if (phone.compareTo(nowH) > 0) nowH = phone;
+        } catch (Exception ignored) { }
         // günlük olasılık + yağış saatleri
         for (int d = 0; d < ND; d++) {
             Day day = res.days[d];
