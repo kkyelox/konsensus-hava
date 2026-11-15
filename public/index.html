@@ -840,7 +840,7 @@ function renderBaro(){
   const diff=A.p-mp;const agree=Math.abs(diff)<=20?'✅ Modellerle uyumlu.':diff>0?'⚠️ Barometre modellerden daha yağışlı bir tablo çiziyor.':'ℹ️ Barometre modellerden daha iyimser.';
   const [lv]=verdict(A.p/100);
   el.innerHTML=`<div class="grid">
-    <div class="kpi"><div class="l">Basınç (deniz seviyesi)</div><div class="v">${fmt(A.P,1)} <span style="font-size:14px">hPa</span></div><div class="l">${arrow} son 3 saatte ${A.d3>0?'+':''}${fmt(A.d3,1)} hPa · ${A.cls} ${trTxt}${A.P12!=null?` · 12 saatte ${A.P-A.P12>0?'+':''}${fmt(A.P-A.P12,1)}`:''}</div></div>
+    <div class="kpi"><div class="l">Basınç (deniz seviyesi)</div><div class="v">${fmt(A.P,1)} <span style="font-size:14px">hPa</span></div><div class="l">${arrow} son 3 saatte ${A.d3>0?'+':''}${fmt(A.d3,1)} hPa · ${A.cls==='sabit'?'sabit':A.cls+' '+trTxt}${A.P12!=null?` · 12 saatte ${A.P-A.P12>0?'+':''}${fmt(A.P-A.P12,1)}`:''}</div></div>
     <div class="kpi"><div class="l">Nem · çiğ noktası farkı</div><div class="v">%${fmt(A.RH)}</div><div class="l">${A.dep!=null?'sıcaklık − çiğ noktası: '+fmt(A.dep,1)+'°C':''}${ok(A.dir)?' · rüzgâr '+dirTxt(A.dir):''}</div></div>
     <div class="kpi rday rv${lv}" style="cursor:default"><div class="l" style="color:#fff;opacity:.9">Barometrik yağış ihtimali (12 sa)</div><div class="v" style="color:#fff">%${A.p}</div><div class="l" style="color:#fff;opacity:.95">${A.txt}</div></div>
     <div class="kpi"><div class="l">Modeller (önümüzdeki 12 saat, en yüksek)</div><div class="v">%${fmt(mp)}</div><div class="l">${agree}</div></div>
