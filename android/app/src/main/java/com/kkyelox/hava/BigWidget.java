@@ -13,7 +13,7 @@ public class BigWidget extends WidgetBase {
         header(v, r, loc, true);
         Forecast.Day d = r.days[0];
         v.setTextViewText(R.id.bDesc, Forecast.desc(r.code) + " · ↑" + fmt(d.tmax) + "° ↓" + fmt(d.tmin) + "° · ☔ bugün " + pct(d.pop)
-                + (d.window.isEmpty() ? "" : " (" + d.window + ")"));
+                + (d.window.isEmpty() ? "" : " (" + d.window + ")") + baroLine(c));
         hourly(v, r, Math.max(4, Math.min(6, w / 52)), 1, 6);
         int rows = Math.max(0, Math.min(5, (h - 150) / 26));
         show(v, R.id.secD, rows > 0);

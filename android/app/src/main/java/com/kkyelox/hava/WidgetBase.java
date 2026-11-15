@@ -35,7 +35,7 @@ public abstract class WidgetBase extends AppWidgetProvider {
     }
 
     @Override
-    public void onEnabled(Context c) { Ticker.schedule(c); }
+    public void onEnabled(Context c) { Ticker.schedule(c); BaroTicker.schedule(c); }
 
     @Override
     public void onAppWidgetOptionsChanged(Context c, AppWidgetManager m, int id, Bundle o) {
@@ -104,6 +104,15 @@ public abstract class WidgetBase extends AppWidgetProvider {
             cal.setTime(new SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(date));
             return DN[cal.get(Calendar.DAY_OF_WEEK) - 1];
         } catch (Exception e) { return "--"; }
+    }
+
+    /** " · 🧭 1012 hPa ↘ −1,2/3sa" (telefon barometresi varsa) */
+    static String baroLine(Context c) {
+        double[] t = Baro.trend(c);
+        if (t == null) return "";
+        String s = " · 🧭 " + Math.round(t[0]) + " hPa";
+        if (!Double.isNaN(t[1])) s += (t[1] <= -0.5 ? " ↘ " : t[1] >= 0.5 ? " ↗ " : " → ") + String.format(java.util.Locale.US, "%+.1f/3sa", t[1]);
+        return s;
     }
 
     static void size(RemoteViews v, int id, float sp) { v.setTextViewTextSize(id, TypedValue.COMPLEX_UNIT_SP, sp); }

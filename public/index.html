@@ -251,7 +251,7 @@ a{color:var(--acc)}
   <section class="view" id="v-yagmur">
     <div class="card"><h2>☔ 3 günlük yağmur tahmini</h2><p class="hint">Her gün için en az 0,5 mm yağış olma olasılığı. 9 model ve yaklaşık 120 senaryo birlikte değerlendirilir. Güne dokun → saat saat.</p><div class="rdays" id="rDays"></div></div>
     <div class="card"><h2>🧭 Basınç ve nem ne diyor?</h2><p class="hint">Modellerden bağımsız ikinci görüş: barometrenin son 3 saatteki değişimi, nem ve rüzgâr yönüyle klasik Zambretti yöntemi (önümüzdeki ~12 saat).</p><div id="rBaro"></div>
-      <div class="chart sm"><canvas id="cB"></canvas></div><p class="note">Kırmızı: basınç (hPa) · mavi: bağıl nem (%) · kesikli: önümüzdeki 12 saat (model) · dikey çizgi: şimdi</p></div>
+      <div class="chart sm"><canvas id="cB"></canvas></div><p class="note">Kırmızı: basınç (hPa) · yeşil noktalar: telefonunun ölçtüğü basınç · mavi: bağıl nem (%) · kesikli: önümüzdeki 12 saat (model) · dikey çizgi: şimdi</p></div>
     <div class="card"><h2>Önümüzdeki birkaç saat</h2><p class="hint">15 dakikalık çözünürlükte beklenen yağış (mm)</p><div id="rNow"></div></div>
     <div class="card"><h2>Saat saat yağmur olasılığı (72 saat)</h2><p class="hint">Koyu mavi = yağmur çok olası. Her kutu 1 saat.</p><div id="rHeat"></div>
       <h3>Olasılık ve beklenen miktar</h3><div class="chart sm"><canvas id="cR"></canvas></div><p class="note">Çubuk: beklenen yağış (mm/saat) · çizgi: olasılık (%) · gölge: senaryoların %10–%90 aralığı (mm)</p></div>
@@ -429,7 +429,7 @@ async function fetchAll(lat,lon){
       .catch(er=>setSrc('e_'+e.id,false,er.message)).finally(tick));
   }
   jobs.push(getJSON(`https://api.open-meteo.com/v1/forecast?${ll}&hourly=pressure_msl,relative_humidity_2m,dew_point_2m,temperature_2m,wind_direction_10m&past_hours=24&forecast_hours=13`)
-    .then(j=>{D.baro=j.hourly;setSrc('baro',true,j.hourly.time.length+' saat')}).catch(e=>setSrc('baro',false,e.message)));
+    .then(j=>{D.baro=j.hourly;D.baroElev=j.elevation;setSrc('baro',true,j.hourly.time.length+' saat')}).catch(e=>setSrc('baro',false,e.message)));
   const today=new Date().toISOString().slice(0,10);
   jobs.push(getJSON(`https://archive-api.open-meteo.com/v1/archive?${ll}&start_date=${addDays(today,-31)}&end_date=${addDays(today,-2)}&hourly=temperature_2m,precipitation,wind_speed_10m`)
     .then(j=>{D.era=j.hourly;D.era.map=mapIdx(j.hourly.time);const n=j.hourly.temperature_2m.filter(ok).length;if(n<24*7)throw new Error('Yetersiz veri');setSrc('era',true,Math.floor(n/24)+' gün')})
@@ -800,13 +800,36 @@ const ZT=[null,
  ['Kararlı, güzel hava',4],['Güzel hava',6],['Açılıyor',12],['Oldukça güzel, düzeliyor',15],['Oldukça güzel, başta sağanak olası',30],
  ['Başta sağanak, sonra düzeliyor',40],['Değişken, düzeliyor',40],['Oldukça kararsız, sonra açılıyor',50],['Kararsız, büyük ihtimalle düzelir',55],
  ['Kararsız, kısa açık aralıklar',65],['Çok kararsız, ara ara açık',70],['Fırtınalı, belki düzelir',80],['Fırtınalı, bol yağış',90]];
+/* Android uygulamasında telefonun barometresi */
+function tzOff(){const o=(D.main&&D.main.utc_offset_seconds)||0;const s=o>=0?'+':'-',a=Math.abs(o);return s+String(Math.floor(a/3600)).padStart(2,'0')+':'+String(Math.floor(a%3600/60)).padStart(2,'0')}
+function phoneBaro(){
+  const A=window.HavaApp;if(!A||!A.hasBarometer)return null;
+  try{
+    if(!A.hasBarometer())return{none:true};
+    const r=JSON.parse(A.baroReadings()||'[]').filter(x=>Array.isArray(x)&&x.length===2);
+    if(!r.length)return{collecting:true,n:0,span:0};
+    const last=r[r.length-1],tl=last[0],pl=last[1];
+    if(Date.now()-tl>3*36e5)return{collecting:true,n:r.length,span:0,old:true};
+    // istasyon basıncını deniz seviyesine indirge (rakım + sıcaklık)
+    const h=ok(D.baroElev)?D.baroElev:0,T=D.main&&D.main.current?D.main.current.temperature_2m:15;
+    const sl=p=>p*Math.pow(1-(0.0065*h)/(T+0.0065*h+273.15),-5.257);
+    let d3=null,best=1e9;
+    for(const x of r.slice(0,-1)){const dt=(tl-x[0])/36e5;if(dt<2.25||dt>4)continue;const o=Math.abs(dt-3);if(o<best){best=o;d3=(pl-x[1])*3/dt}}
+    let d12=null;best=1e9;
+    for(const x of r.slice(0,-1)){const dt=(tl-x[0])/36e5;if(dt<10||dt>14)continue;const o=Math.abs(dt-12);if(o<best){best=o;d12=(pl-x[1])*12/dt}}
+    const span=(tl-r[0][0])/36e5;
+    return{station:pl,sea:sl(pl),d3,d12,t:tl,n:r.length,span,readings:r.map(x=>[x[0],sl(x[1])]),collecting:d3==null};
+  }catch(e){return null}
+}
 function baroAnalysis(){
   const b=D.baro;if(!b||!b.pressure_msl)return null;
   const nowH=F.now.slice(0,13);let i0=b.time.findIndex(t=>t.slice(0,13)===nowH);if(i0<3)i0=b.time.findIndex(t=>t.slice(0,13)>nowH)-1;
   if(i0<3)return null;
-  const P=b.pressure_msl[i0],P3=b.pressure_msl[i0-3],P12=i0>=12?b.pressure_msl[i0-12]:null;
+  let P=b.pressure_msl[i0],P3=b.pressure_msl[i0-3],P12=i0>=12?b.pressure_msl[i0-12]:null;
   if(!ok(P)||!ok(P3))return null;
-  const d3=P-P3;const T=b.temperature_2m[i0],Td=b.dew_point_2m[i0],RH=b.relative_humidity_2m[i0],RH3=b.relative_humidity_2m[i0-3];
+  let d3=P-P3,src='model',dP12=P12!=null?P-P12:null;
+  const ph=phoneBaro();
+  if(ph&&!ph.none&&!ph.collecting&&ph.d3!=null){P=ph.sea;d3=ph.d3;dP12=ph.d12;src='phone'}const T=b.temperature_2m[i0],Td=b.dew_point_2m[i0],RH=b.relative_humidity_2m[i0],RH3=b.relative_humidity_2m[i0-3];
   const dep=ok(T)&&ok(Td)?T-Td:null;const dir=b.wind_direction_10m[i0];
   // WMO basınç eğilimi sınıfı
   const a=Math.abs(d3);const cls=a<0.5?'sabit':a<=1.5?'yavaş':a<=3.5?'orta hızda':a<=6?'hızlı':'çok hızlı';
@@ -827,7 +850,15 @@ function baroAnalysis(){
   if(ok(RH)&&ok(RH3)){const dr=RH-RH3;if(dr>=10){p+=5;notes.push('nem artıyor (+'+fmt(dr)+' puan/3 sa)')}else if(dr<=-10){p-=5;notes.push('nem azalıyor ('+fmt(dr)+' puan/3 sa)')}}
   if(d3<=-3.5)notes.push('⚠️ basınç hızlı düşüyor: rüzgâr ve sağanak riski');
   p=clamp(Math.round(p),2,96);
-  return{P,d3,P12,cls,trend,Z,txt,p,dep,RH,dir,notes,i0};
+  return{P,d3,dP12,cls,trend,Z,txt,p,dep,RH,dir,notes,i0,src,ph};
+}
+function phoneNote(ph){
+  if(!window.HavaApp)return '<p class="note">📱 Android uygulamasında telefonunun kendi barometresi kullanılır.</p>';
+  if(!ph)return '';
+  if(ph.none)return '<p class="note">📱 Bu telefonda basınç sensörü yok; model verisi kullanılıyor.</p>';
+  if(ph.collecting){const need=Math.max(0,Math.ceil((2.25-ph.span)*60));
+    return `<p class="note">📱 Telefon barometresi ölçüm topluyor (${ph.n} ölçüm${ph.span?`, ${fmt(ph.span,1)} saat`:''}). 3 saatlik değişim için ${need>0?'yaklaşık '+need+' dk daha':'bir sonraki ölçüm'} gerekiyor; o zamana kadar model verisi kullanılıyor.</p>`}
+  return `<p class="note">📱 Kendi ölçümün: ${ph.n} okuma, son ${fmt(ph.span,1)} saat · istasyon basıncı ${fmt(ph.station,1)} hPa · son okuma ${new Date(ph.t).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})}. Yükseklik değiştirirsen (kat, yokuş, araç) değer kayar; değişim yorumunu yanıltabilir.</p>`;
 }
 function renderBaro(){
   const el=$('#rBaro');if(!el)return;const A=baroAnalysis();
@@ -840,17 +871,19 @@ function renderBaro(){
   const diff=A.p-mp;const agree=Math.abs(diff)<=20?'✅ Modellerle uyumlu.':diff>0?'⚠️ Barometre modellerden daha yağışlı bir tablo çiziyor.':'ℹ️ Barometre modellerden daha iyimser.';
   const [lv]=verdict(A.p/100);
   el.innerHTML=`<div class="grid">
-    <div class="kpi"><div class="l">Basınç (deniz seviyesi)</div><div class="v">${fmt(A.P,1)} <span style="font-size:14px">hPa</span></div><div class="l">${arrow} son 3 saatte ${A.d3>0?'+':''}${fmt(A.d3,1)} hPa · ${A.cls==='sabit'?'sabit':A.cls+' '+trTxt}${A.P12!=null?` · 12 saatte ${A.P-A.P12>0?'+':''}${fmt(A.P-A.P12,1)}`:''}</div></div>
+    <div class="kpi"><div class="l">${A.src==='phone'?'📱 Telefon barometresi (deniz seviyesine indirgenmiş)':'Basınç (deniz seviyesi, model analizi)'}</div><div class="v">${fmt(A.P,1)} <span style="font-size:14px">hPa</span></div><div class="l">${arrow} son 3 saatte ${A.d3>0?'+':''}${fmt(A.d3,1)} hPa · ${A.cls==='sabit'?'sabit':A.cls+' '+trTxt}${A.dP12!=null?` · 12 saatte ${A.dP12>0?'+':''}${fmt(A.dP12,1)}`:''}</div></div>
     <div class="kpi"><div class="l">Nem · çiğ noktası farkı</div><div class="v">%${fmt(A.RH)}</div><div class="l">${A.dep!=null?'sıcaklık − çiğ noktası: '+fmt(A.dep,1)+'°C':''}${ok(A.dir)?' · rüzgâr '+dirTxt(A.dir):''}</div></div>
     <div class="kpi rday rv${lv}" style="cursor:default"><div class="l" style="color:#fff;opacity:.9">Barometrik yağış ihtimali (12 sa)</div><div class="v" style="color:#fff">%${A.p}</div><div class="l" style="color:#fff;opacity:.95">${A.txt}</div></div>
     <div class="kpi"><div class="l">Modeller (önümüzdeki 12 saat, en yüksek)</div><div class="v">%${fmt(mp)}</div><div class="l">${agree}</div></div>
   </div>
   ${A.notes.length?`<p class="note" style="margin-top:8px">🔎 ${A.notes.join(' · ')}</p>`:''}
+  ${phoneNote(A.ph)}
   <p class="note">Nasıl: basınç ${trTxt} → Zambretti kodu ${A.Z}; rüzgâr yönü ve mevsimle düzeltilir, ardından nem ve çiğ noktası farkıyla ayarlanır. Bu yöntem tek noktadaki barometreye dayanır, ~12 saatlik kaba bir göstergedir; sayısal modeller kadar isabetli değildir ama ani basınç düşüşlerini (fırtına habercisi) iyi yakalar.</p>`;
   const b=D.baro;killChart('b');
   const now=A.i0;
   charts.b=new Chart($('#cB'),{data:{labels:b.time.map(t=>t.slice(11,13)==='00'?dname(t.slice(0,10),F.today):t.slice(11,13)),datasets:[
     {type:'line',label:'Basınç hPa',data:b.pressure_msl,borderColor:'#dc2626',borderWidth:2.5,pointRadius:0,tension:.3,yAxisID:'y',segment:{borderDash:c=>c.p0DataIndex>=now?[5,4]:undefined}},
+    ...(A.ph&&A.ph.readings?[{type:'line',label:'Telefon hPa',data:b.time.map(t=>{const tt=Date.parse(t+':00'+tzOff());let v=null,bd=1e9;for(const [x,p] of A.ph.readings){const d=Math.abs(x-tt);if(d<31*6e4&&d<bd){bd=d;v=+p.toFixed(1)}}return v}),borderColor:'#16a34a',backgroundColor:'#16a34a',pointRadius:3,showLine:false,yAxisID:'y'}]:[]),
     {type:'line',label:'Nem %',data:b.relative_humidity_2m,borderColor:'#2563eb',borderWidth:1.5,pointRadius:0,tension:.3,yAxisID:'y1',segment:{borderDash:c=>c.p0DataIndex>=now?[5,4]:undefined}}]},
     options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false}},
       scales:{x:{grid:{color:c=>c.index===now?'#0f172a':'transparent',lineWidth:c=>c.index===now?2:0},ticks:{maxTicksLimit:innerWidth<700?7:12,maxRotation:0}},

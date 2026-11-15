@@ -54,6 +54,7 @@ public class RefreshService extends Service {
         }
         new Thread(() -> {
             try {
+                Baro.record(app);                                   // telefon barometresi
                 if (Loc.usesDevice(app)) Loc.refreshDeviceNow(app);  // pasif: son bilinen konum, pil harcamaz
                 Updater.updateAll(app, true);
             } catch (Throwable ignored) { }

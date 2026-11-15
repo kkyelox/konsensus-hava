@@ -79,6 +79,8 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         Ticker.schedule(getApplicationContext());
+        BaroTicker.schedule(getApplicationContext());
+        { final Context ac = getApplicationContext(); new Thread(() -> Baro.record(ac)).start(); }
         // Otomatik konumdaysa konumu tazele ve widget'ları güncelle
         final Context app = getApplicationContext();
         if (Loc.hasPermission(this) && Loc.usesDevice(app) && Loc.freshDue(app)) Gps.freshAndSave(this, null);
@@ -138,5 +140,15 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String locationMode() { return Loc.globalMode(app); }
+
+        @JavascriptInterface
+        public boolean hasBarometer() { return Baro.available(app); }
+
+        /** [[zaman_ms, hPa(istasyon)], ...] son 48 saat */
+        @JavascriptInterface
+        public String baroReadings() { return Baro.json(app); }
+
+        @JavascriptInterface
+        public void recordBaro() { new Thread(() -> Baro.record(app)).start(); }
     }
 }
