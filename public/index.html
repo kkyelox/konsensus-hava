@@ -250,6 +250,8 @@ a{color:var(--acc)}
 
   <section class="view" id="v-yagmur">
     <div class="card"><h2>☔ 3 günlük yağmur tahmini</h2><p class="hint">Her gün için en az 0,5 mm yağış olma olasılığı. 9 model ve yaklaşık 120 senaryo birlikte değerlendirilir. Güne dokun → saat saat.</p><div class="rdays" id="rDays"></div></div>
+    <div class="card"><h2>🧭 Basınç ve nem ne diyor?</h2><p class="hint">Modellerden bağımsız ikinci görüş: barometrenin son 3 saatteki değişimi, nem ve rüzgâr yönüyle klasik Zambretti yöntemi (önümüzdeki ~12 saat).</p><div id="rBaro"></div>
+      <div class="chart sm"><canvas id="cB"></canvas></div><p class="note">Kırmızı: basınç (hPa) · mavi: bağıl nem (%) · kesikli: önümüzdeki 12 saat (model) · dikey çizgi: şimdi</p></div>
     <div class="card"><h2>Önümüzdeki birkaç saat</h2><p class="hint">15 dakikalık çözünürlükte beklenen yağış (mm)</p><div id="rNow"></div></div>
     <div class="card"><h2>Saat saat yağmur olasılığı (72 saat)</h2><p class="hint">Koyu mavi = yağmur çok olası. Her kutu 1 saat.</p><div id="rHeat"></div>
       <h3>Olasılık ve beklenen miktar</h3><div class="chart sm"><canvas id="cR"></canvas></div><p class="note">Çubuk: beklenen yağış (mm/saat) · çizgi: olasılık (%) · gölge: senaryoların %10–%90 aralığı (mm)</p></div>
@@ -382,6 +384,7 @@ function initSources(){
   for(const m of MODELS)add('m_'+m.id,m.name+' (deterministik)',m.org+' · '+m.kind+' · '+m.res,'https://open-meteo.com/en/docs');
   for(const e of ENS)add('e_'+e.id,e.name,e.org+' · olasılık ve belirsizlik için','https://open-meteo.com/en/docs/ensemble-api');
   for(const m of MODELS)add('p_'+m.id,m.name+' geçmiş çalıştırmalar','1–7 gün önce yapılmış tahminler → doğruluk ve kararlılık hesabı','https://open-meteo.com/en/docs/previous-runs-api');
+  add('baro','Basınç & nem (son 24 saat + 12 saat)','Deniz seviyesi basıncı, bağıl nem, çiğ noktası, rüzgâr yönü → Zambretti barometrik tahmini','https://open-meteo.com/en/docs');
   add('era','ERA5 yeniden analiz (son ~5 hafta)','ECMWF/Copernicus — uydu, radyosonde, yer istasyonu, şamandıra ve uçak gözlemlerinin asimilasyonu. Doğrulamada "gerçek" olarak kullanılır.','https://open-meteo.com/en/docs/historical-weather-api');
   add('clim','ERA5 iklim normali 2016–2025','10 yıllık günlük değerler → mevsim normali, değişkenlik, tutarlılık','https://open-meteo.com/en/docs/historical-weather-api');
   add('gibs','NASA GIBS uydu katmanları','VIIRS (NOAA-20, Suomi-NPP) ve MODIS (Terra) gerçek renk görüntüler','https://earthdata.nasa.gov/gibs');
@@ -425,6 +428,8 @@ async function fetchAll(lat,lon){
         if(!o.temp.length)throw new Error('Üye verisi yok');D.ens[e.id]=o;setSrc('e_'+e.id,true,o.temp.length+' üye')})
       .catch(er=>setSrc('e_'+e.id,false,er.message)).finally(tick));
   }
+  jobs.push(getJSON(`https://api.open-meteo.com/v1/forecast?${ll}&hourly=pressure_msl,relative_humidity_2m,dew_point_2m,temperature_2m,wind_direction_10m&past_hours=24&forecast_hours=13`)
+    .then(j=>{D.baro=j.hourly;setSrc('baro',true,j.hourly.time.length+' saat')}).catch(e=>setSrc('baro',false,e.message)));
   const today=new Date().toISOString().slice(0,10);
   jobs.push(getJSON(`https://archive-api.open-meteo.com/v1/archive?${ll}&start_date=${addDays(today,-31)}&end_date=${addDays(today,-2)}&hourly=temperature_2m,precipitation,wind_speed_10m`)
     .then(j=>{D.era=j.hourly;D.era.map=mapIdx(j.hourly.time);const n=j.hourly.temperature_2m.filter(ok).length;if(n<24*7)throw new Error('Yetersiz veri');setSrc('era',true,Math.floor(n/24)+' gün')})
@@ -651,6 +656,7 @@ function renderSummary(){
   for(let i=1;i<Math.min(ds.length,8);i++){const df=ds[i].tmax-ds[i-1].tmax;if(Math.abs(df)>=4){L.push(`🌡️ <b>${dname(ds[i].d,F.today)}</b> belirgin bir ${df<0?'soğuma':'ısınma'} var (en yüksek ${fmt(ds[i-1].tmax)}° → ${fmt(ds[i].tmax)}°).`);break}}
   const windy=ds.filter(d=>d.L<=7&&d.gust>=50);if(windy.length)L.push(`🌬️ Kuvvetli rüzgâr: ${windy.map(d=>`<b>${dname(d.d,F.today)}</b> (hamle ${fmt(d.gust)} km/sa)`).join(', ')}.`);
   const frost=ds.filter(d=>d.L<=7&&d.tmin<=0);if(frost.length)L.push(`❄️ Don riski: ${frost.map(d=>dname(d.d,F.today)).join(', ')}.`);
+  const BA=baroAnalysis();if(BA&&BA.d3<=-2)L.push(`🧭 Basınç son 3 saatte <b>${fmt(BA.d3,1)} hPa</b> düştü (${BA.cls}) — hava bozuluyor olabilir.`);else if(BA&&BA.d3>=2)L.push(`🧭 Basınç yükseliyor (+${fmt(BA.d3,1)} hPa/3 sa) — hava düzelme eğiliminde.`);
   const unc=ds.find(d=>d.conf<0.5);L.push(unc?`📉 Tahmin güveni <b>${dname(unc.d,F.today)} (${dshort(unc.d)})</b> itibarıyla %50’nin altına iniyor; bu günleri eğilim olarak değerlendir.`:'✅ Tüm günlerde güven %50’nin üzerinde — atmosfer şu an oldukça tahmin edilebilir.');
   const big=ds.filter(d=>d.L>=1&&d.L<=5&&d.spread>=2.5);if(big.length)L.push(`🤔 Modeller ${big.map(d=>dname(d.d,F.today)).join(', ')} için anlaşamıyor (yayılım ≥2,5°C).`);
   const ic=['🕐','🌧️','🌡️','🌬️','❄️','📉','🤔'];$('#summary').innerHTML=`<div class="summary bul"><ul>${L.map(x=>'<li>'+x+'</li>').join('')}</ul></div>`;
@@ -731,6 +737,7 @@ function dayEnsemble(d){
 }
 function modelDaySum(id,d){const f=D.fc[id];if(!f)return null;let s=0,n=0;for(const h of F.hours){if(h.d!==d)continue;const i=f.map.get(h.t);if(i!=null&&ok(f.precipitation[i])){s+=f.precipitation[i];n++}}return n>=18?s:null}
 function renderRain(){
+  renderBaro();
   const ds=F.days.slice(0,3);if(!ds.length)return;
   // gün kartları
   $('#rDays').innerHTML=ds.map(d=>{
@@ -783,6 +790,71 @@ function renderRain(){
     $('#rSkill').innerHTML=r.length?`<div class="grid">${r.map(({L,b})=>`<div class="kpi"><div class="l">${L} gün önceden</div><div class="v">%${fmt(b.pAcc*100)}</div><div class="l">yağışlı/kuru günü doğru bilme${b.pod!=null?` · yağmurlu günlerin %${fmt(b.pod*100)}’ini yakaladı`:''}${b.far!=null?` · yanlış alarm %${fmt(b.far*100)}`:''}</div></div>`).join('')}</div>
       <p class="note">Son ~30 günde, bu konumda modellerin birleşik tahmini gerçekleşen yağışla (ERA5, ≥1 mm/gün) karşılaştırıldı. Az yağışlı dönemlerde örnek sayısı küçük olduğundan oranlar oynak olabilir.</p>`:'<p class="mute">Yeterli geçmiş yok.</p>'}
   else $('#rSkill').innerHTML='<p class="mute">Geçmiş doğrulama verisi şu an alınamadı; birkaç dakika sonra yenile.</p>';
+}
+/* ============ barometrik tahmin (Zambretti + nem) ============ */
+const ZT=[null,
+ ['Kararlı, güzel hava',5],['Güzel hava',8],['Güzel, giderek bozuluyor',20],['Oldukça güzel, sonra sağanak',40],['Sağanaklı, giderek kararsız',60],
+ ['Kararsız, sonra yağmur',70],['Ara ara yağmur, giderek kötüleşiyor',80],['Ara ara yağmur, çok kararsız',85],['Çok kararsız, yağmurlu',90],
+ ['Kararlı, güzel hava',5],['Güzel hava',8],['Güzel, olası sağanak',25],['Oldukça güzel, sağanak olası',45],['Sağanaklı, açık aralıklarla',55],
+ ['Değişken, biraz yağmur',60],['Kararsız, ara ara yağmur',70],['Sık aralıklarla yağmur',80],['Çok kararsız, yağmurlu',88],['Fırtınalı, bol yağış',92],
+ ['Kararlı, güzel hava',4],['Güzel hava',6],['Açılıyor',12],['Oldukça güzel, düzeliyor',15],['Oldukça güzel, başta sağanak olası',30],
+ ['Başta sağanak, sonra düzeliyor',40],['Değişken, düzeliyor',40],['Oldukça kararsız, sonra açılıyor',50],['Kararsız, büyük ihtimalle düzelir',55],
+ ['Kararsız, kısa açık aralıklar',65],['Çok kararsız, ara ara açık',70],['Fırtınalı, belki düzelir',80],['Fırtınalı, bol yağış',90]];
+function baroAnalysis(){
+  const b=D.baro;if(!b||!b.pressure_msl)return null;
+  const nowH=F.now.slice(0,13);let i0=b.time.findIndex(t=>t.slice(0,13)===nowH);if(i0<3)i0=b.time.findIndex(t=>t.slice(0,13)>nowH)-1;
+  if(i0<3)return null;
+  const P=b.pressure_msl[i0],P3=b.pressure_msl[i0-3],P12=i0>=12?b.pressure_msl[i0-12]:null;
+  if(!ok(P)||!ok(P3))return null;
+  const d3=P-P3;const T=b.temperature_2m[i0],Td=b.dew_point_2m[i0],RH=b.relative_humidity_2m[i0],RH3=b.relative_humidity_2m[i0-3];
+  const dep=ok(T)&&ok(Td)?T-Td:null;const dir=b.wind_direction_10m[i0];
+  // WMO basınç eğilimi sınıfı
+  const a=Math.abs(d3);const cls=a<0.5?'sabit':a<=1.5?'yavaş':a<=3.5?'orta hızda':a<=6?'hızlı':'çok hızlı';
+  const trend=d3<=-1.6?'falling':d3>=1.6?'rising':'steady';
+  let Z=trend==='falling'?Math.round(127-0.12*P):trend==='rising'?Math.round(185-0.16*P):Math.round(144-0.13*P);
+  // rüzgâr yönü düzeltmesi (kuzey yarımküre): güneyli rüzgâr kötüleştirir, kuzeyli iyileştirir
+  if(ok(dir)){const s=dir>=112.5&&dir<=247.5,n=dir>=292.5||dir<=67.5;if(s)Z+=1;if(n)Z-=1}
+  // ay düzeltmesi: kışın yükselen basınç daha az iyileştirir, yazın düşen daha az kötüleştirir
+  const mon=+F.now.slice(5,7),winter=mon>=10||mon<=3;
+  if(trend==='rising'&&winter)Z+=1;if(trend==='falling'&&!winter)Z-=1;
+  const rng=trend==='falling'?[1,9]:trend==='steady'?[10,19]:[20,32];Z=clamp(Z,rng[0],rng[1]);
+  let [txt,p]=ZT[Z];
+  // nem / çiğ noktası düzeltmesi
+  const notes=[];
+  if(dep!=null){if(dep<=2){p+=12;notes.push('hava doymaya yakın (sıcaklık − çiğ noktası '+fmt(dep,1)+'°C)')}
+    else if(dep<=4){p+=5;notes.push('nemli hava ('+fmt(dep,1)+'°C fark)')}
+    else if(dep>=10){p-=15;notes.push('kuru hava ('+fmt(dep,1)+'°C fark)')}}
+  if(ok(RH)&&ok(RH3)){const dr=RH-RH3;if(dr>=10){p+=5;notes.push('nem artıyor (+'+fmt(dr)+' puan/3 sa)')}else if(dr<=-10){p-=5;notes.push('nem azalıyor ('+fmt(dr)+' puan/3 sa)')}}
+  if(d3<=-3.5)notes.push('⚠️ basınç hızlı düşüyor: rüzgâr ve sağanak riski');
+  p=clamp(Math.round(p),2,96);
+  return{P,d3,P12,cls,trend,Z,txt,p,dep,RH,dir,notes,i0};
+}
+function renderBaro(){
+  const el=$('#rBaro');if(!el)return;const A=baroAnalysis();
+  if(!A){el.innerHTML='<p class="mute">Basınç verisi şu an alınamadı.</p>';killChart('b');return}
+  const arrow=A.trend==='falling'?'↘️':A.trend==='rising'?'↗️':'➡️';
+  const trTxt=A.trend==='falling'?'düşüyor':A.trend==='rising'?'yükseliyor':'sabit';
+  // modellerle karşılaştır: önümüzdeki 12 saatte en yüksek saatlik yağış olasılığı
+  const st=Math.max(F.hours.findIndex(h=>h.t>=F.now.slice(0,13)),0);
+  const mp=Math.max(0,...F.hours.slice(st,st+12).map(h=>h.pop||0))*100;
+  const diff=A.p-mp;const agree=Math.abs(diff)<=20?'✅ Modellerle uyumlu.':diff>0?'⚠️ Barometre modellerden daha yağışlı bir tablo çiziyor.':'ℹ️ Barometre modellerden daha iyimser.';
+  const [lv]=verdict(A.p/100);
+  el.innerHTML=`<div class="grid">
+    <div class="kpi"><div class="l">Basınç (deniz seviyesi)</div><div class="v">${fmt(A.P,1)} <span style="font-size:14px">hPa</span></div><div class="l">${arrow} son 3 saatte ${A.d3>0?'+':''}${fmt(A.d3,1)} hPa · ${A.cls} ${trTxt}${A.P12!=null?` · 12 saatte ${A.P-A.P12>0?'+':''}${fmt(A.P-A.P12,1)}`:''}</div></div>
+    <div class="kpi"><div class="l">Nem · çiğ noktası farkı</div><div class="v">%${fmt(A.RH)}</div><div class="l">${A.dep!=null?'sıcaklık − çiğ noktası: '+fmt(A.dep,1)+'°C':''}${ok(A.dir)?' · rüzgâr '+dirTxt(A.dir):''}</div></div>
+    <div class="kpi rday rv${lv}" style="cursor:default"><div class="l" style="color:#fff;opacity:.9">Barometrik yağış ihtimali (12 sa)</div><div class="v" style="color:#fff">%${A.p}</div><div class="l" style="color:#fff;opacity:.95">${A.txt}</div></div>
+    <div class="kpi"><div class="l">Modeller (önümüzdeki 12 saat, en yüksek)</div><div class="v">%${fmt(mp)}</div><div class="l">${agree}</div></div>
+  </div>
+  ${A.notes.length?`<p class="note" style="margin-top:8px">🔎 ${A.notes.join(' · ')}</p>`:''}
+  <p class="note">Nasıl: basınç ${trTxt} → Zambretti kodu ${A.Z}; rüzgâr yönü ve mevsimle düzeltilir, ardından nem ve çiğ noktası farkıyla ayarlanır. Bu yöntem tek noktadaki barometreye dayanır, ~12 saatlik kaba bir göstergedir; sayısal modeller kadar isabetli değildir ama ani basınç düşüşlerini (fırtına habercisi) iyi yakalar.</p>`;
+  const b=D.baro;killChart('b');
+  const now=A.i0;
+  charts.b=new Chart($('#cB'),{data:{labels:b.time.map(t=>t.slice(11,13)==='00'?dname(t.slice(0,10),F.today):t.slice(11,13)),datasets:[
+    {type:'line',label:'Basınç hPa',data:b.pressure_msl,borderColor:'#dc2626',borderWidth:2.5,pointRadius:0,tension:.3,yAxisID:'y',segment:{borderDash:c=>c.p0DataIndex>=now?[5,4]:undefined}},
+    {type:'line',label:'Nem %',data:b.relative_humidity_2m,borderColor:'#2563eb',borderWidth:1.5,pointRadius:0,tension:.3,yAxisID:'y1',segment:{borderDash:c=>c.p0DataIndex>=now?[5,4]:undefined}}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false}},
+      scales:{x:{grid:{color:c=>c.index===now?'#0f172a':'transparent',lineWidth:c=>c.index===now?2:0},ticks:{maxTicksLimit:innerWidth<700?7:12,maxRotation:0}},
+        y:{position:'left',ticks:{callback:v=>v}},y1:{position:'right',min:0,max:100,grid:{display:false},ticks:{callback:v=>v+'%'}}}}});
 }
 function renderRecent(){
   const r=load('wx_recent',[]);const k=l=>(+l.lat).toFixed(2)+','+(+l.lon).toFixed(2);
