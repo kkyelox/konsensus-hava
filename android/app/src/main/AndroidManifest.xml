@@ -7,6 +7,7 @@
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <application
         android:label="Konsensüs Hava"
@@ -19,10 +20,13 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
         </activity>
         <service android:name=".RefreshService" android:exported="false" android:foregroundServiceType="dataSync" />
         <receiver android:name=".TickReceiver" android:exported="false" />
         <receiver android:name=".BaroTicker" android:exported="false" />
+        <receiver android:name=".CampTicker" android:exported="false" />
+        <activity android:name=".CampActivity" android:exported="true" android:label="Kamp günü" />
         <receiver android:name=".BootReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

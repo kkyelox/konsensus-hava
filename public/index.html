@@ -183,7 +183,7 @@ a{color:var(--acc)}
   header{padding:calc(10px + env(safe-area-inset-top)) 12px 62px}
   .brand{font-size:17px}.brand small{display:none}
   .search{margin-top:10px}.search input{padding:11px 12px}
-  .search button{font-size:0;padding:0 13px}#gps::before{content:'📍';font-size:18px}#appw::before{content:'⚙';font-size:18px}
+  .search button{font-size:0;padding:0 13px}#gps::before{content:'📍';font-size:18px}#appw::before{content:'⚙';font-size:18px}#campb::before{content:'⛺';font-size:18px}
   main{padding:0 10px 20px;margin-top:-52px}
   .card{padding:13px;border-radius:14px;margin-bottom:10px}
   .now{grid-template-columns:auto 1fr;gap:4px 12px}
@@ -223,6 +223,7 @@ a{color:var(--acc)}
     <input id="q" placeholder="Şehir veya ilçe ara (ör. Kadıköy, Ankara)" autocomplete="off">
     <button id="gps">📍 Konumum</button>
     <button id="appw" style="display:none" title="Widget ayarları">⚙ Widget</button>
+    <button id="campb" style="display:none" title="Kamp günü">⛺ Kamp</button>
     <div id="results"></div>
   </div>
   <div class="recent" id="recent"></div>
@@ -1125,6 +1126,7 @@ setInterval(async()=>{
     renderNow();renderHourStrip();renderRain();
   }catch(e){}
 },120000);
+if(window.HavaApp&&window.HavaApp.openCamp){const c=$('#campb');c.style.display='';c.onclick=()=>{try{window.HavaApp.openCamp()}catch(e){}}}
 if(window.HavaApp){const b=$('#appw');b.style.display='';b.onclick=()=>{try{window.HavaApp.openSettings()}catch(e){}}}
 const TABS=['ozet','yagmur','saatlik','gunluk','dogruluk','harita','kaynak'];
 function fromHash(){const h=location.hash.slice(1);if(TABS.includes(h))showTab(h)}

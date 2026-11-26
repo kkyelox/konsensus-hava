@@ -80,6 +80,7 @@ public class MainActivity extends Activity {
         super.onResume();
         Ticker.schedule(getApplicationContext());
         BaroTicker.schedule(getApplicationContext());
+        CampTicker.ensure(getApplicationContext());
         { final Context ac = getApplicationContext(); new Thread(() -> Baro.record(ac)).start(); }
         // Otomatik konumdaysa konumu tazele ve widget'ları güncelle
         final Context app = getApplicationContext();
@@ -140,6 +141,11 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String locationMode() { return Loc.globalMode(app); }
+
+        @JavascriptInterface
+        public void openCamp() {
+            runOnUiThread(() -> startActivity(new Intent(MainActivity.this, CampActivity.class)));
+        }
 
         @JavascriptInterface
         public boolean hasBarometer() { return Baro.available(app); }

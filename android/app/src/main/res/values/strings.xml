@@ -6,4 +6,6 @@
     <string name="d_raintoday">Bugün yağmur</string>
     <string name="d_details">Ayrıntılar</string>
     <string name="d_big">Büyük panel</string>
+    <string name="s_camp">Kamp günü</string>
+    <string name="s_camp_long">Kamp için ideal gün</string>
 </resources>

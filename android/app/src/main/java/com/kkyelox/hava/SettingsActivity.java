@@ -39,6 +39,7 @@ public class SettingsActivity extends Activity {
         });
         findViewById(R.id.battery).setOnClickListener(v ->
                 startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName()))));
+        findViewById(R.id.camp).setOnClickListener(v -> startActivity(new Intent(this, CampActivity.class)));
         findViewById(R.id.refresh).setOnClickListener(v -> { msg.setText("Yenileniyor…"); refreshAll(true); });
     }
 
